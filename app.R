@@ -1,11 +1,3 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 library(shiny)
 library(dplyr)
 library(ggplot2)
@@ -52,7 +44,10 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+  
+  # Increases limit of Shiny file uploads from 5MB per file to 30MB
   options(shiny.maxRequestSize=30*1024^2)
+  
   cur_files<-c('','','')
   currentSL<-""
   currentSL_ts<-""
@@ -69,21 +64,28 @@ server <- function(input, output) {
   sparklink_ts <- NULL
   merged<-data.frame()
   source("multiplot.R")
+  
+  # Updates the stored Sparklink_read_df file when the Sparklink file widget is changed
   Sparklink_read <- reactive({
+    
+    # Retrieves file that has been uploaded
     infile <- input$Sparklink
     if (is.null(infile)) {
       # User has not uploaded a file yet
       return(NULL)
     }
-    if (infile$datapath!=currentSL){
-      currentSL=infile$datapath
-      cur_files[1]=infile$datapath
-      df<-read.csv(infile$datapath)[ ,c('Sample.Name', 'Sample.Vial')]
+    
+    if (infile$datapath != currentSL){
+      currentSL = infile$datapath
+      cur_files[1] = infile$datapath
+      df <- read.csv(infile$datapath)[ ,c('Sample.Name', 'Sample.Vial')]
     }
-    df
+    return(df)
   })
   
+  
   Sparklink_TS <- reactive({
+    print("entered Sparklink_TS")
     infile <- input$Sparklink
     if (is.null(infile)) {
       
@@ -94,7 +96,8 @@ server <- function(input, output) {
       currentSL_ts<-infile$datapath
       Sparklink_df_ts<-read.csv(infile$datapath,stringsAsFactors=FALSE)[ ,c('Executed')]
     }
-    Sparklink_df_ts
+    print("returning file for Sparklink_TS")
+    return(Sparklink_df_ts)
   })
   
   svp_diameter_read <- reactive({
@@ -111,6 +114,7 @@ server <- function(input, output) {
     }
     svp_diameter_df
   })
+  
   
   svp_ts_read <- reactive({
     infile <- input$Scans
@@ -218,7 +222,7 @@ server <- function(input, output) {
       svp$Raw.Data...Time.s.<-NULL
       index=0
       for (i in 1:length(svp_ts)){
-        if (between((sparklink_ts[1]-svp_ts[i])*86400,710,730)){
+        if (between((sparklink_ts[1] - svp_ts[i]) * 86400, 710, 730)){
           index=i
           break
         }
