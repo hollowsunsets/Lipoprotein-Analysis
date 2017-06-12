@@ -101,6 +101,7 @@ server <- function(input, output) {
   })
   
   svp_diameter_read <- reactive({
+    print("entered svp_diameter_read")
     infile <- input$Scans
     if (is.null(infile)) {
       
@@ -112,11 +113,13 @@ server <- function(input, output) {
       cur_files[2]=infile$datapath
       svp_diameter_df<-read.csv(infile$datapath,skip = dia_start_index)[,2]
     }
-    svp_diameter_df
+    print("return object for svp_diameter_read")
+    return(svp_diameter_df)
   })
   
   
   svp_ts_read <- reactive({
+    print("entered svp_ts_read")
     infile <- input$Scans
     if (is.null(infile)) {
       
@@ -128,10 +131,12 @@ server <- function(input, output) {
       print(datetime)
       svp_ts_df<-read.csv(infile$datapath,skip=(datetime),header=F,stringsAsFactors=FALSE)[,c(F,T)][1:2,]
     }
-    svp_ts_df
+    print("return object for svp_ts_read")
+    return(svp_ts_df)
   })
   
   svp_read <- reactive({
+    print("entered svp_read")
     infile <- input$Scans
     if (is.null(infile)) {
       
@@ -142,10 +147,12 @@ server <- function(input, output) {
       cur_svp<-infile$datapath
       svp_df<-read.csv(infile$datapath,skip = sample_start_index)[,c(T,F)]
     }
-    svp_df
+    print("returned object from svp_read")
+    return(svp_df)
   })
   
   svp_index_read <- reactive({
+    print("entered svp_index_read")
     infile <- input$Scans
     if (is.null(infile)) {
       
@@ -156,12 +163,14 @@ server <- function(input, output) {
       cur_svp<-infile$datapath
       svp_df<-read.csv(infile$datapath)
     }
-    svp_df
+    print("returned svp_df object generated")
+    return(svp_df)
   })
   
   
   
   amplog_read <- reactive({
+    print("entered amplog_read")
     infile <- input$Amplog
     if (is.null(infile)) {
       # User has not uploaded a file yet
@@ -172,7 +181,8 @@ server <- function(input, output) {
       cur_files[3]=infile$datapath
       amp_df<-read.xlsx(infile$datapath,sheetIndex = 1,as.data.frame = T,header = F,stringsAsFactors=FALSE)[c(1,3)]
     }
-    amp_df
+    print("returned amplog_read object generated")
+    return(amp_df)
   })
   
   
@@ -278,7 +288,7 @@ server <- function(input, output) {
       print(merged)
       svp
     }
-    svp
+    return(svp)
   })
   
   amp_scans <- reactive({  
@@ -303,7 +313,7 @@ server <- function(input, output) {
       test<-split(amplog[index_amp:nrow(amplog),], cut(as.POSIXlt(amplog$X1[index_amp:nrow(amplog)], format="%Y-%m-%d %H:%M:%S"),breaks="12 mins"))
       test
     }
-    test
+    return(test)
   })
   
   compute_graphs <- reactive({
@@ -324,7 +334,7 @@ server <- function(input, output) {
       }
       result
     }
-    result
+    return(result)
   })
   
   
@@ -381,7 +391,7 @@ server <- function(input, output) {
     window_sum<-c(sum(max_window$scan1),sum(max_window$scan2),sum(max_window$scan3),sum(max_window$scan4))
     
     out<-which(!between(window_sum,(mean(window_sum)-sd(window_sum)),(mean(window_sum)+1.1*sd(window_sum))))
-    out
+    return(out)
   })
   
   output$text1 <- renderText({ 
@@ -401,7 +411,7 @@ server <- function(input, output) {
     scan_flag<-c(1,1,1,1)
     scan_flag[out7_10]<-0
     scan_flag[out10_14]<-0
-    scan_flag
+    return(scan_flag)
   })
  
    
@@ -417,7 +427,7 @@ server <- function(input, output) {
   })
   output$svpTable <- renderDataTable({
     result<-renderScan()
-    result
+    return(result)
   })
   
   dropScans <- observeEvent(input$drop, {
