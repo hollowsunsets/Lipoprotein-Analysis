@@ -342,16 +342,16 @@ server <- function(input, output) {
     result<-compute_graphs()
     loess7_10<-result[[as.numeric(input$sampleId)]][(result[[as.numeric(input$sampleId)]]$diameter>7) & (result[[as.numeric(input$sampleId)]]$diameter<10),]
     
-    loess7_10$scan3<-loess7_10$scan3*1.07
-    loess7_10$scan4<-loess7_10$scan4*1.07
-    max_index=which.max(c(max(loess7_10$scan1),max(loess7_10$scan2),max(loess7_10$scan3),max(loess7_10$scan4)))
-    df_svp_max_index<-as.data.frame(apply(loess7_10,2,which.max))
-    colnames(df_svp_max_index)<-c("index")
-    svp_max_index<-df_svp_max_index$index[max_index+1]
-    max_window<-loess7_10[between(loess7_10$diameter,(loess7_10[svp_max_index,max_index]-0.25),(loess7_10[svp_max_index,max_index]+0.25)),]
-    window_sum<-c(sum(max_window$scan1),sum(max_window$scan2),sum(max_window$scan3),sum(max_window$scan4))
-    out<-which(!between(window_sum,(mean(window_sum)-sd(window_sum)),(mean(window_sum)+1.1*sd(window_sum))))
-    out
+    loess7_10$scan3 <- loess7_10$scan3 * 1.07
+    loess7_10$scan4 <- loess7_10$scan4 * 1.07
+    max_index = which.max(c(max(loess7_10$scan1),max(loess7_10$scan2),max(loess7_10$scan3),max(loess7_10$scan4)))
+    df_svp_max_index <- as.data.frame(apply(loess7_10,2,which.max))
+    colnames(df_svp_max_index) <- c("index")
+    svp_max_index <- df_svp_max_index$index[max_index+1]
+    max_window <- loess7_10[between(loess7_10$diameter,(loess7_10[svp_max_index,max_index]-0.25),(loess7_10[svp_max_index,max_index]+0.25)),]
+    window_sum <- c(sum(max_window$scan1),sum(max_window$scan2),sum(max_window$scan3),sum(max_window$scan4))
+    out <- which(!between(window_sum,(mean(window_sum)-sd(window_sum)),(mean(window_sum)+1.1*sd(window_sum))))
+    return(out)
   })
   
   scan_conform10_14<-reactive({
@@ -382,12 +382,12 @@ server <- function(input, output) {
   
   output$text1 <- renderText({ 
     out<-scan_conform7_10()
-    paste("In the range of diamter 7-10, the peaks might not conform at scan(s): ",out)
+    paste("In the range of diameter 7-10, the peaks might not conform at scan(s): ",out)
   })
   
   output$text2 <- renderText({ 
     out<-scan_conform10_14()
-    paste("In the range of diamter 10_14, the peaks might not conform at scan(s): ",out)
+    paste("In the range of diameter 10_14, the peaks might not conform at scan(s): ",out)
   })
   
   flagScans<- reactive({
