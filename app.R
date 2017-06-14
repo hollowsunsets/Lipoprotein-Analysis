@@ -75,7 +75,7 @@ server <- function(input, output) {
       return(NULL)
     }
     
-    if (infile$datapath != currentSL){
+    if (infile$datapath != currentSL){ # currentSL = ?
       currentSL = infile$datapath
       cur_files[1] = infile$datapath
       df <- read.csv(infile$datapath)[ ,c('Sample.Name', 'Sample.Vial')]
@@ -87,12 +87,12 @@ server <- function(input, output) {
   Sparklink_TS <- reactive({
     print("entered Sparklink_TS")
     infile <- input$Sparklink
-    if (is.null(infile)) {
+    if (is.null(infile)) { # alternative to is.null? Not very readable
       
       # User has not uploaded a file yet
       return(NULL)
     }
-    if (infile$datapath!=currentSL_ts){
+    if (infile$datapath != currentSL_ts){
       currentSL_ts<-infile$datapath
       Sparklink_df_ts<-read.csv(infile$datapath,stringsAsFactors=FALSE)[ ,c('Executed')]
     }
@@ -100,10 +100,11 @@ server <- function(input, output) {
     return(Sparklink_df_ts)
   })
   
+  
   svp_diameter_read <- reactive({
     print("entered svp_diameter_read")
     infile <- input$Scans
-    if (is.null(infile)) {
+    if (is.null(infile)) { 
       
       # User has not uploaded a file yet
       return(NULL)
@@ -111,12 +112,12 @@ server <- function(input, output) {
     if (infile$datapath!=cur_svpd){
       cur_svpd<-infile$datapath
       cur_files[2]=infile$datapath
-      svp_diameter_df<-read.csv(infile$datapath,skip = dia_start_index)[,2]
+      svp_diameter_df<-read.csv(infile$datapath, skip = dia_start_index)[ ,2] #svp_diameter_df is 2nd column in infile$datapath, skipping dia_start_index rows
     }
     print("return object for svp_diameter_read")
     return(svp_diameter_df)
   })
-  
+             
   
   svp_ts_read <- reactive({
     print("entered svp_ts_read")
@@ -206,10 +207,10 @@ server <- function(input, output) {
       merge<-t(sparklink[,2])
       
       # svp import,datatime handling
-      aim<-svp_index_read()
+      aim <- svp_index_read()
       # odd_indexes<-seq(3,ncol(aim),2)
-      sample_start_index<<-which(aim[,1]=='Raw Data - Time(s)')
-      dia_start_index<<-which(aim[,1]=='Raw Data - Time(s)')
+      sample_start_index<<-which(aim[,1]=='Raw Data - Time(s)') # native R function for getting the index of the letter that matches the passed in condition. 
+                                                                # why not use DPLYR and select() though.....
       datetime<<-which(aim[,1]=='Date')
       
       diameters<-svp_diameter_read()
@@ -239,14 +240,19 @@ server <- function(input, output) {
       }
       print(sparklink_ts[1])
       print(svp_ts[i])
-      #convert scans using the formula
+      # convert scans using the formula 
+      # what is the formula? -_-
       print(svp)
-      svp<-cbind(diameters,svp[,index:(index+(length(sparklink_ts)*6)-1)])
+      svp <- cbind(diameters,svp[, index:(index+(length(sparklink_ts) * 6) - 1)]) # Combines the diameters data frame with the columns within svp from
+                                                                                  # the starting value of index to index+(length(sparklink_ts) * 6) - 1
       print(svp)
-      svp[,2:ncol(svp)]<-svp[,2:ncol(svp)]*((25.02*exp(-0.2382*svp$diameters))+(950.9*exp(-1.017*svp$diameters))+1)
+      svp[,2:ncol(svp)] <- svp[,2:ncol(svp)] * 
+                           ((25.02 * exp(-0.2382 * svp$diameters)) + 
+                           (950.9 * exp(-1.017 * svp$diameters)) + 1) # Scales all values in svp starting from column 2 
+                                                                      # by the value 25.02^(-0.2382 * diameters) + (950.9^(-1.017 * diameters) + 1)
+       
       
-      
-      #deleting first 2 scans from the converted data
+      # Deleting first 2 scans from the converted data
       index<-c()
       count=1
       for (i in 2:ncol(svp)){
@@ -316,6 +322,7 @@ server <- function(input, output) {
     return(test)
   })
   
+  
   compute_graphs <- reactive({
     print("compute_graphs")
     if ((input$Amplog$datapath!=cur_files[3]) & (input$Sparklink$datapath!=cur_files[1]) & (input$Scans$datapath!=cur_files[2])){
@@ -355,10 +362,11 @@ server <- function(input, output) {
     print("7_10")
     result <- compute_graphs()
     loess7_10 <- result[[as.numeric(input$sampleId)]][(result[[as.numeric(input$sampleId)]]$diameter>7) & (result[[as.numeric(input$sampleId)]]$diameter<10),]
-    
     loess7_10$scan3 <- loess7_10$scan3 * 1.07
     loess7_10$scan4 <- loess7_10$scan4 * 1.07
+   
     max_index = which.max(c(max(loess7_10$scan1),max(loess7_10$scan2),max(loess7_10$scan3),max(loess7_10$scan4)))
+    
     df_svp_max_index <- as.data.frame(apply(loess7_10,2,which.max))
     colnames(df_svp_max_index) <- c("index")
     svp_max_index <- df_svp_max_index$index[max_index+1]
@@ -374,76 +382,93 @@ server <- function(input, output) {
     loess10_14<-result[[as.numeric(input$sampleId)]][(result[[as.numeric(input$sampleId)]]$diameter>10) & (result[[as.numeric(input$sampleId)]]$diameter<14),]
     loess10_14$scan3<-loess10_14$scan3*1.07
     loess10_14$scan4<-loess10_14$scan4*1.07
-    n=nrow(loess10_14)
-    flag<-0
-    for (i in 1:ncol(loess10_14)){
-      if (rowMeans(loess10_14[i,2:5])<rowMeans(loess10_14[i+1,2:5])){
-        flag=i
+    n = nrow(loess10_14)
+    
+    flag <- 0
+    for (i in 1:ncol(loess10_14)){ # for all of the columns in loess10_14
+      if (rowMeans(loess10_14[i,2:5])<rowMeans(loess10_14[i+1,2:5])){ # if the mean in the rows 2-5 from the column i are smaller than the rows 2-5 from column i + 1
+        flag=i # set flag to i (is there only supposed to be one set of rows that meets this condition?)
       }
     }
     
-    max_index=which.max(c(max(loess10_14$scan1[flag:n]),max(loess10_14$scan2[flag:n]),max(loess10_14$scan3[flag:n]),max(loess10_14$scan4[flag:n])))
+    max_index = which.max(c(max(loess10_14$scan1[flag:n]),max(loess10_14$scan2[flag:n]),max(loess10_14$scan3[flag:n]),max(loess10_14$scan4[flag:n])))
     
     df_svp_max_index<-as.data.frame(apply(loess10_14,2,which.max))
     colnames(df_svp_max_index)<-c("index")
     svp_max_index<-df_svp_max_index$index[max_index+1]
     max_window<-loess10_14[between(loess10_14$diameter,(loess10_14[svp_max_index,max_index]-0.25),(loess10_14[svp_max_index,max_index]+0.25)),]
     window_sum<-c(sum(max_window$scan1),sum(max_window$scan2),sum(max_window$scan3),sum(max_window$scan4))
-    
     out<-which(!between(window_sum,(mean(window_sum)-sd(window_sum)),(mean(window_sum)+1.1*sd(window_sum))))
     return(out)
   })
   
+  scan_conform <- reactive({
+    
+  })
+  
   output$text1 <- renderText({ 
     out<-scan_conform7_10()
-    paste("In the range of diameter 7-10, the peaks might not conform at scan(s): ",out)
+    paste("In the range of diameter 7-10, the peaks might not conform at scan(s): ", out)
   })
   
   output$text2 <- renderText({ 
     out<-scan_conform10_14()
-    paste("In the range of diameter 10_14, the peaks might not conform at scan(s): ",out)
+    paste("In the range of diameter 10_14, the peaks might not conform at scan(s): ", out)
   })
   
   flagScans<- reactive({
     print("drop")
+    print("enter flagScans")
     out7_10<-scan_conform7_10()
+    print(out7_10)
     out10_14<-scan_conform10_14()
+    print(out10_14)
     scan_flag<-c(1,1,1,1)
     scan_flag[out7_10]<-0
     scan_flag[out10_14]<-0
+    print(scan_flag)
+    print("return result of flagScans")
     return(scan_flag)
   })
  
    
   renderScan <- reactive ({
+    print("renderScan start")
     result<-avg_scans()
     ones<-rep(1,ncol(result))
     ones[1]<-"Flag"
     result<-rbind(ones,result)
     scan_flag<-flagScans()
     n=as.numeric(input$sampleId)*4+1
+    print("n = ", n)
     result[1,c(n-3,n-2,n-1,n)]<-scan_flag
+    print(result)
     result[,c(1,n-3,n-2,n-1,n)]
+    print(result)
+    print("end of result")
   })
   output$svpTable <- renderDataTable({
     result<-renderScan()
     return(result)
   })
   
+  # In response to a scan being dropped, removes the scan from the graph and 
+  # the rendered data
   dropScans <- observeEvent(input$drop, {
     print("dropScans")
     if (input$dropScan_in!=""){
-      dropScan_df<-renderScan()
-      scan_index<-as.numeric(input$dropScan_in)
-      dropScan_mat<-data.matrix(dropScan_df[2:(nrow(dropScan_df)-1),c(-1,-(scan_index+1))])
+      dropScan_df <- renderScan()
+      scan_index <- as.numeric(input$dropScan_in)
+      dropScan_mat <- data.matrix(dropScan_df[2:(nrow(dropScan_df)-1),c(-1,-(scan_index+1))])
       recalc_row<-rowMeans(dropScan_mat)
       merged[1,(as.numeric(input$sampleId)+1)]<<-0
-      merged[4:(nrow(merged)-1),(as.numeric(input$sampleId)+1)]<<-recalc_row
+      merged[4:(nrow(merged)-1),(as.numeric(input$sampleId) + 1)]<<-recalc_row
     }
     
     if (input$dropSample == TRUE){
-      merged[,(as.numeric(input$sampleId)+1)]<<-NULL
+      merged[,(as.numeric(input$sampleId) + 1)]<<-NULL
     }
+    print("end of dropScans function")
   })
   
   generateCSV <- observeEvent(input$writecsv, {
