@@ -1,56 +1,3 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-library(shiny)
-library(dplyr)
-library(ggplot2)
-library(xlsx)
-library(chron) 
-
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-  
-  # Application title
-  titlePanel("Samples"),
-  # Sidebar with a slider input for number of bins 
-  sidebarLayout(
-    sidebarPanel(
-      htmlOutput("selectUI"),
-      fileInput("Sparklink", "Choose Sparklink File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv")
-      ),
-      fileInput("Scans", "Choose Scans File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv")
-      ),
-      fileInput("Amplog", "Choose Amplog File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv",".xlsx")
-      ),
-      textInput("param", "Parameter", "0.05")
-    ),
-    
-    mainPanel(
-      tabsetPanel(
-        tabPanel('Visualization',
-                 textOutput("text1"),
-                 textOutput("text2"),
-                 plotOutput("distPlot")
-                 ),
-        tabPanel('Readings',
-                 dataTableOutput("svpTable"),
-                 textInput(inputId = 'dropScan_in',label='Enter scan number to be dropped',value='',placeholder='ex: 1'),
-                 actionButton("drop", "Drop Scan(s)"),
-                 checkboxInput("dropSample", "Drop Sample", FALSE),
-                 actionButton("writecsv", "Generate Averaged CSV")
-                 )
-      )
-    )
-  )
-)
-
-
-# Define server logic required to draw a histogram
 server <- function(input, output) {
   options(shiny.maxRequestSize=30*1024^2)
   cur_files<-c('','','')
@@ -399,8 +346,8 @@ server <- function(input, output) {
     scan_flag[out10_14]<-0
     scan_flag
   })
- 
-   
+  
+  
   renderScan <- reactive ({
     result<-avg_scans()
     ones<-rep(1,ncol(result))
@@ -437,8 +384,3 @@ server <- function(input, output) {
     print('Write')
   })
 }
-
-
-# Run the application 
-shinyApp(ui = ui, server = server)
-
