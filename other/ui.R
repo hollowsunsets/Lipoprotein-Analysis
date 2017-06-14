@@ -1,19 +1,22 @@
-ui <- fluidPage(
+library(shiny)
+
+shinyUI(fluidPage(
   
   # Application title
+  
   titlePanel("Samples"),
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
       htmlOutput("selectUI"),
-      fileInput("Sparklink", "Choose Sparklink File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv")
+                  fileInput("Sparklink", "Choose Sparklink File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv")
+                  ),
+                  fileInput("Scans", "Choose Scans File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv")
+                  ),
+                  fileInput("Amplog", "Choose Amplog File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv",".xlsx")
+                  ),
+                  textInput("param", "Parameter", "0.05") # what is "Parameter"? rename to make more user friendly
       ),
-      fileInput("Scans", "Choose Scans File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv")
-      ),
-      fileInput("Amplog", "Choose Amplog File",accept = c("text/csv","text/comma-separated-values,text/plain",".csv",".xlsx")
-      ),
-      textInput("param", "Parameter", "0.05")
-    ),
     
     mainPanel(
       tabsetPanel(
@@ -32,4 +35,4 @@ ui <- fluidPage(
       )
     )
   )
-)
+))

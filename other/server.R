@@ -1,4 +1,6 @@
-server <- function(input, output) {
+library(shiny)
+
+shinyServer(function(input, output) {
   options(shiny.maxRequestSize=30*1024^2)
   cur_files<-c('','','')
   currentSL<-""
@@ -383,4 +385,4 @@ server <- function(input, output) {
     write.csv(merged,"Fyttic_input.csv")
     print('Write')
   })
-}
+})
