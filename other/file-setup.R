@@ -1,5 +1,9 @@
 library(dplyr)
 
-combineFiles <- function() {
+scanGraphData <- function(sparklink.file, scans.file) {
+  
+}
+
+nmGraphData <- function(amplog.file) {
   
 }
