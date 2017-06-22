@@ -13,7 +13,7 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 findGraphPeak <- function(graph.data) { # this is such a common functionality, there is probably a library that can solve this 
   # Use quadratic formula to find maximum point of graph
   # return the point (x and y) of the graph 
-  return (x, y);
+  return (x, y)
 }
 
 
