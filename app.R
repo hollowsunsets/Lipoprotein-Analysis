@@ -219,6 +219,11 @@ server <- function(input, output) {
       index=0
       for (i in 1:length(svp_ts)){
         if (between((sparklink_ts[1]-svp_ts[i])*86400,710,730)){
+          print(between((sparklink_ts[1]-svp_ts[i])*86400,710,730))
+          print(sparklink_ts[1])
+          print(svp_ts[i])
+          print(sparklink_ts[1]-svp_ts[i])
+          print((sparklink_ts[1]-svp_ts[i])*86400)
           index=i
           break
         }

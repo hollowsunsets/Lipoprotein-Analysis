@@ -17,3 +17,8 @@ findGraphPeak <- function(graph.data) { # this is such a common functionality, t
 }
 
 
+getAverageScans <- function(graph.data) {
+  
+  
+  return(avg.scans)
+}

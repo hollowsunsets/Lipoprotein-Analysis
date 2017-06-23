@@ -9,11 +9,19 @@ amplog.file <- read.xlsx("data\\ampdDataset2.xlsx", sheetIndex = 1, as.data.fram
 
 # Returns 
 scanGraphData <- function(raw.sparklink.file, raw.scans.file) {
+  
   # Getting relevant data from Sparklink file
   scan.graph.data <- raw.sparklink.file %>% select(Sample.Name, Sample.Vial, Executed)
+  
   # Removing rows before relevant scan data begins from scans file 
-  # Possible issue: Can we reasonably expect that scan data will always begin at a row named "Sample #"?
-  scans.test <- scans.file[which(scans.file$Sample.File == "Sample #"):nrow(scans.file),]
+  scans.test <- scans.file[which(scans.file$Sample.File == "Raw Data - Time(s)"):nrow(scans.file),]
+
+  # Change column names to the first row (which contains names of relevant data)
+  colnames(scans.test) <- scans.test[1,]
+  scans.test <- scans.test[-1,]
+  
+  
+  scans.med <- select(scans.test, starts_with("Count"))
   
   return(scan.graph.data)                                      
 }
