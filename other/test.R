@@ -23,7 +23,7 @@ for (i in 1:length(amplog_ts)){
 test2 <- split(test[index_amp:nrow(test),], cut(as.POSIXlt(test$X1[index_amp:nrow(test)], format="%Y-%m-%d %H:%M:%S"),breaks="12 mins"))
 
 # avg_scans
-sparklink <- read.csv("data\\SparkRunlistDataset2.csv")[ ,c('Sample.Name', 'Sample.Vial')]
+sparklink <- read.csv("data\\SparkRunlistDataset2.csv", stringAsFactors=FALSE)[ ,c('Sample.Name', 'Sample.Vial')]
 sparklink2 <- sparklink
 sparklink2$Sample.Name = (as.character(sparklink$Sample.Name))
 sparklink2$Sample.Vial = (as.character(sparklink$Sample.Vial))
@@ -38,6 +38,9 @@ datetime<<-which(svp[,1]=='Date')
 svp_diameters <- read.csv("data\\AIMDataset2.csv", skip = dia_start_index)[,2] 
 svp_ts <- read.csv("data\\AIMDataset2.csv",skip=(datetime),header=F,stringsAsFactors=FALSE)[,c(F,T)][1:2,]
 svp_ts<-as.POSIXct(paste(svp_ts[1,], svp_ts[2,], sep=" "), format="%m/%d/%Y %H:%M:%S")
+
+sparklink.ts <- read.csv("data\\SparkRunlistDataset2.csv",stringsAsFactors=FALSE)[ ,c('Executed')]
+
 
 
 # compute_graphs
