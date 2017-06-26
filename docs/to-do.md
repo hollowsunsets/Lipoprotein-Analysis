@@ -33,3 +33,24 @@
 ### 8/14/2017 - 8/18/2017
 
 ### 8/21/2017 - 8/25/2017
+
+
+## Notes: 
+
+### 6-14-2017
+
+Should this be made into a tool that generates plots on scans? That would be more useful that an application specifically designed for analyzing one specific type of data. Plots can be isolated based on given parameters. I shouldn't need to completely understand the data to be able to code a useful application for this. 
+
+Ideally, an exploratory data analysis tool.
+
+Inputs:
+* Range of rows and columns to analyze (be able to enter in a subset of data instead of having to pre-emptively adapt the file to fit the program)
+	- can help with multiple formats; program doesn't work with appropriate format currently
+* Multiple data files - be able to generate multiple inputs and retrieve specific columns and rows from each
+
+Stretch:
+* Multiple kinds of plots that can be generated (not just line)
+* Support different file types than just CSV
+* Apply operation to entire given dataset or subset of given dataset 
+	- be able to save this dataset for future operations, while also preserving integrity of original
+
