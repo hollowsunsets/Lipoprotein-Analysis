@@ -121,7 +121,6 @@ server <- function(input, output) {
     }
     if (infile$datapath!=currentSvp_ts){
       currentSvp_ts<-infile$datapath
-      print(datetime)
       svp_ts_df<-read.csv(infile$datapath,skip=(datetime),header=F,stringsAsFactors=FALSE)[,c(F,T)][1:2,]
     }
     svp_ts_df
@@ -183,7 +182,6 @@ server <- function(input, output) {
   })
   
   avg_scans <- reactive({
-    print("avg_scans")
     if ((input$Amplog$datapath!=cur_files[3]) & (input$Sparklink$datapath!=cur_files[1]) & (input$Scans$datapath!=cur_files[2])){
       
       sparklink<-Sparklink_read()
@@ -200,10 +198,8 @@ server <- function(input, output) {
       
       diameters<-svp_diameter_read()
       svp_ts<-svp_ts_read()
-      #print(paste(svp_ts[1,], svp_ts[2,], sep=" "))
       svp_ts<-as.POSIXct(paste(svp_ts[1,], svp_ts[2,], sep=" "), format="%m/%d/%Y %H:%M:%S")
-      #print(svp_ts)
-      
+
       
       # timestamp handling for sparklink and svp
       sparklink_ts<-Sparklink_TS()
@@ -219,22 +215,19 @@ server <- function(input, output) {
       index=0
       for (i in 1:length(svp_ts)){
         if (between((sparklink_ts[1]-svp_ts[i])*86400,710,730)){
-          print(between((sparklink_ts[1]-svp_ts[i])*86400,710,730))
-          print(sparklink_ts[1])
-          print(svp_ts[i])
-          print(sparklink_ts[1]-svp_ts[i])
-          print((sparklink_ts[1]-svp_ts[i])*86400)
           index=i
           break
         }
       }
-      print(sparklink_ts[1])
-      print(svp_ts[i])
       #convert scans using the formula
-      print(svp)
+      print(svp[,index:(index+(length(sparklink_ts)*6)-1)])
+      print(index)
+      print(sparklink_ts)
       svp<-cbind(diameters,svp[,index:(index+(length(sparklink_ts)*6)-1)])
       print(svp)
+
       svp[,2:ncol(svp)]<-svp[,2:ncol(svp)]*((25.02*exp(-0.2382*svp$diameters))+(950.9*exp(-1.017*svp$diameters))+1)
+      print(svp)
       
       
       #deleting first 2 scans from the converted data
@@ -263,27 +256,21 @@ server <- function(input, output) {
       scan_avg<-as.data.frame(do.call(cbind, lapply(ind, function(i)rowMeans(test[, i]))),stringsAsFactors=FALSE)
       scan_avg[sapply(scan_avg, is.factor)] <- lapply(scan_avg[sapply(scan_avg, is.factor)], as.character)
       #merge averaged svp and sparklink data
-      print(scan_avg)
-      
+
       colnames(scan_avg)<-sparklink[,1]
-      print('merge')
       colnames(merge)<-sparklink[,1]
-      print('done')
       merged<<-as.data.frame(rbind(merge,sprintf("inj%d", 1:ncol(merged))),stringsAsFactors=FALSE)
       merged<<-rbind(merged,scan_avg)
       merged<<-cbind(" " =c("Sample Name","Diameter",diameters),merged)
       ones<-rep(1,ncol(merged))
       ones[1]<-"Flag"
-      print(ones)
       merged<<-rbind(ones,merged)
-      print(merged)
       svp
     }
     svp
   })
   
   amp_scans <- reactive({  
-    print("amp")
     if ((input$Amplog$datapath!=cur_files[3]) & (input$Sparklink$datapath!=cur_files[1]) & (input$Scans$datapath!=cur_files[2])){
       #read the amplog data
       amplog<-amplog_read()
@@ -308,7 +295,6 @@ server <- function(input, output) {
   })
   
   compute_graphs <- reactive({
-    print("compute_graphs")
     if ((input$Amplog$datapath!=cur_files[3]) & (input$Sparklink$datapath!=cur_files[1]) & (input$Scans$datapath!=cur_files[2])){
       svp<-avg_scans()
       result <- vector("list", (ncol(svp)-1)/4)
@@ -343,7 +329,6 @@ server <- function(input, output) {
   })
   
   scan_conform7_10<- reactive({
-    print("7_10")
     result <- compute_graphs()
     loess7_10 <- result[[as.numeric(input$sampleId)]][(result[[as.numeric(input$sampleId)]]$diameter>7) & (result[[as.numeric(input$sampleId)]]$diameter<10),]
     
@@ -360,7 +345,6 @@ server <- function(input, output) {
   })
   
   scan_conform10_14<-reactive({
-    print("10_14")
     result<-compute_graphs()
     loess10_14<-result[[as.numeric(input$sampleId)]][(result[[as.numeric(input$sampleId)]]$diameter>10) & (result[[as.numeric(input$sampleId)]]$diameter<14),]
     loess10_14$scan3<-loess10_14$scan3*1.07
@@ -396,7 +380,6 @@ server <- function(input, output) {
   })
   
   flagScans<- reactive({
-    print("drop")
     out7_10<-scan_conform7_10()
     out10_14<-scan_conform10_14()
     scan_flag<-c(1,1,1,1)
@@ -422,7 +405,6 @@ server <- function(input, output) {
   })
   
   dropScans <- observeEvent(input$drop, {
-    print("dropScans")
     if (input$dropScan_in!=""){
       dropScan_df<-renderScan()
       scan_index<-as.numeric(input$dropScan_in)
@@ -439,7 +421,6 @@ server <- function(input, output) {
   
   generateCSV <- observeEvent(input$writecsv, {
     write.csv(merged,"Fyttic_input.csv")
-    print('Write')
   })
 }
 
