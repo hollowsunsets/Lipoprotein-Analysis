@@ -1,5 +1,5 @@
 ## June
-
+### 6/12/2017 - 6/16/2017
 - [ ] Create starting documentation for dmen-vis
 - [ ] Understand logic for `app.R`
 - [ ] Understand logic for `multiplot.R`
@@ -53,3 +53,4 @@ Stretch:
 * Support different file types than just CSV
 * Apply operation to entire given dataset or subset of given dataset 
 	- be able to save this dataset for future operations, while also preserving integrity of original
+

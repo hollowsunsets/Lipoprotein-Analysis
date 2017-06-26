@@ -2,6 +2,7 @@
  
 ## app.R
 ### server
+* Sparklink_read
 * Sparklink_TS 
 * svp_diameter_read
 * svp_ts_read
