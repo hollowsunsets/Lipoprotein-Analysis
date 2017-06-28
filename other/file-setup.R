@@ -45,7 +45,8 @@ nmGraphData <- function(raw.amplog.file) {
 }
 
 getSparklinkLabels <- function(raw.sparklink.file) {
-  graph.labels <- raw.sparklink.file %>% select()
+  graph.labels <- raw.sparklink.file %>% select(Sample.Name, Sample.Vial)
+  return (graph.labels)
 }
 
 # Deletes every nth column in the given data frame, beginning from the 
