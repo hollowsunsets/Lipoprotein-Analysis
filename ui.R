@@ -24,14 +24,14 @@ shinyUI(fluidPage(
                  textOutput("text1"),
                  textOutput("text2"),
                  plotOutput("distPlot")
-        ),
-        tabPanel('Readings',
-                 dataTableOutput("svpTable"),
-                 textInput(inputId = 'dropScan_in',label='Enter scan number to be dropped',value='',placeholder='ex: 1'),
-                 actionButton("drop", "Drop Scan(s)"),
-                 checkboxInput("dropSample", "Drop Sample", FALSE),
-                 actionButton("writecsv", "Generate Averaged CSV")
-        )
+        )#,
+       # tabPanel('Readings',
+        #         dataTableOutput("svpTable"),
+         #        textInput(inputId = 'dropScan_in',label='Enter scan number to be dropped',value='',placeholder='ex: 1'),
+          #       actionButton("drop", "Drop Scan(s)"),
+           #      checkboxInput("dropSample", "Drop Sample", FALSE),
+            #     actionButton("writecsv", "Generate Averaged CSV")
+      #  )
       )
     )
   )

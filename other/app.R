@@ -151,7 +151,7 @@ server <- function(input, output) {
       cur_svp<-infile$datapath
       svp_df<-read.csv(infile$datapath)
     }
-    svp_df
+    svp_df8pq
   })
   
   
