@@ -1,12 +1,13 @@
+# --------------------- Dependencies ---------------------------
+
 library(dplyr) # dependency for wrangling data 
 library(xlsx) # dependency for reading in .xlsx files
 
-# test data
-raw.sparklink.file <- read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE)
-raw.amplog.file <- read.xlsx("data\\ampdDataset2.xlsx", sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors=FALSE)
 
-# With the given Sparklink and scan files, returns a data frame that has 
-# scan data, 
+# ---------------------- Functions -------------------------------
+
+# With the given scan files, returns a data frame that has 
+# contains the relevant scan data, prepared to be graphed.
 scanGraphData <- function() {
   # Remove all rows before the rows that contain diameter and count data
   diameter.row.index <- grep("^Raw", raw.scans.file[,1])
@@ -40,10 +41,12 @@ scanGraphData <- function() {
 }
 
 
+# Returns a data frame to be graphed from the given amplog file.
 nmGraphData <- function(raw.amplog.file) {
-  nm.graph.data <- amplog.file %>% select(X1, X3) 
+  nm.graph.data <- raw.amplog.file %>% select(X1, X3) 
 }
 
+# Returns a data frame that contains labels for the scan data from the given Sparklink file.
 getSparklinkLabels <- function(raw.sparklink.file) {
   graph.labels <- raw.sparklink.file %>% select(Sample.Name, Sample.Vial)
   return (graph.labels)
