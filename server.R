@@ -1,7 +1,7 @@
 library(shiny)
 library(dplyr)
 library(xlsx)
-library(plotly)
+library(ggplot2)
 
 source("file-setup.R")
 source("graph-alteration.R")
@@ -78,7 +78,7 @@ shinyServer(function(input, output) {
    output$ampPlot <- renderPlot({
      if (!is.null(input$amplog)) {
         amp.data <- ampGraphData(amplog.data)
-        
+        amp.plot <- p 
      }
    })
 })

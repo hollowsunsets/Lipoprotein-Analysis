@@ -9,13 +9,8 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
   return(graphPairIsSimilar(...))
 }
 
-# Assumed format to be x and y
-findGraphPeak <- function(graph.data) { # this is such a common functionality, there is probably a library that can solve this 
-  # Use quadratic formula to find maximum point of graph
-  # return the point (x and y) of the graph 
-  return (x, y)
-}
-
+# NOTE: Deleted findGraphPeak. This is easy to do with dplyr. Add annotations on with plot_ly.
+# See following link for example: https://moderndata.plot.ly/interactive-r-visualizations-with-d3-ggplot2-rstudio/
 
 getAverageScans <- function(graph.data) {
   

@@ -39,7 +39,6 @@ scanGraphData <- function(raw.scans.file) {
   return(scan.graph.data)                                      
 }
 
-
 # Returns a data frame to be graphed from the given amplog file.
 ampGraphData <- function(raw.amplog.file) {
   amp.graph.data <- raw.amplog.file %>% select(X1, X3) 
