@@ -7,30 +7,33 @@ shinyUI(fluidPage(
   sidebarLayout(
     sidebarPanel(
       h3("File Selection"),
-      fileInput("sparklink", "Choose Sparklink File",
-                 accept = c("text/csv","text/comma-separated-values,text/plain",".csv")),
-      fileInput("scans", "Choose Scans File",
-                 accept = c("text/csv","text/comma-separated-values,text/plain",".csv")),
-      fileInput("amplog", "Choose Amplog File",
-                 accept = c("text/csv","text/comma-separated-values,text/plain",".csv",".xlsx")),
-      conditionalPanel(   # only appears if scan data has been provided 
-        condition = "input.sparklink != null",
-        h3("Scan Data Interactions"),
-        selectInput("scansToRemove", label = h4("Remove a Scan"),
-                    choices = list(list.from.scans.dataset.indicating.graphs.also.none),
-                    selected = "None"), 
-        selectInput("scansToAdd", label = h4("Add a Scan"),
-                    choices = list(list.from.graph.changes.R),
-                    selected = "None"),
-        downloadButton('averageScans', "Download Average Scans")
-      )),
+      p("Please upload the data files that you wish to visualize using this application."),
+      fileInput("sparklinkData", "Choose Sparklink File",
+                 accept = c("text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv")),
+      fileInput("scansData", "Choose Scans File",
+                 accept = c("text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv")),
+      fileInput("amplogData", "Choose Amplog File",
+                 accept = c("text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+      tags$hr(),
+      uiOutput("scanLabels"),
+      uiOutput("addScans"),
+      uiOutput("removeScans"),
+      uiOutput("averageScans")
+    ),
+
     mainPanel(
-      conditionalPanel(  # only appears if scan data has been provided
-        condition = "input.sparklink != null",
+      conditionalPanel(
+        condition = "output.scanPlot", 
         plotOutput("scanPlot")
       ),
-      conditionalPanel(  # only appears if amplog data has been provided
-        condition = "input.amplog != null",
+      conditionalPanel(
+        condition = "output.ampPlot",
         plotOutput("ampPlot")
       )
     )
