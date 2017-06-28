@@ -3,9 +3,6 @@
 library(dplyr) # dependency for wrangling data 
 library(xlsx) # dependency for reading in .xlsx files
 
-raw.amplog.file <- read.xlsx("data\\170522_new_data_format_for_JC_amplog.xlsx", sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors=FALSE)
-
-
 # ---------------------- Functions -------------------------------
 
 # With the given scan files, returns a data frame that has 
@@ -44,9 +41,9 @@ scanGraphData <- function(raw.scans.file) {
 
 
 # Returns a data frame to be graphed from the given amplog file.
-nmGraphData <- function(raw.amplog.file) {
-  nm.graph.data <- raw.amplog.file %>% select(X1, X3) 
-  return(nm.graph.data)
+ampGraphData <- function(raw.amplog.file) {
+  amp.graph.data <- raw.amplog.file %>% select(X1, X3) 
+  return(amp.graph.data)
 }
 
 # Returns a data frame that contains labels for the scan data from the given Sparklink file.
