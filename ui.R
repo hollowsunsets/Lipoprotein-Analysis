@@ -15,8 +15,13 @@ shinyUI(fluidPage(
                  accept = c("text/csv","text/comma-separated-values,text/plain",".csv",".xlsx")),
       conditionalPanel(   # only appears if scan data has been provided 
         condition = "",
-        checkboxInput(), # checkbox for removing a scan
-        checkboxInput() 
+        selectInput("scans-to-remove", label = h4("Remove a Scan"),
+                    choices = list(list.from.scans.dataset.indicating.graphs.also.none),
+                    selected = "None"), 
+        selectInput("scans-to-add", label = h4("Add a Scan"),
+                    choices = list(list.from.graph.changes.R),
+                    selected = "None"),
+        downloadButton('average-scans', "Download Average Scans")
       )),
     mainPanel(
       conditionalPanel(  # only appears if scan data has been provided
