@@ -12,6 +12,9 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 # NOTE: Deleted findGraphPeak. This is easy to do with dplyr. Add annotations on with plot_ly.
 # See following link for example: https://moderndata.plot.ly/interactive-r-visualizations-with-d3-ggplot2-rstudio/
 
+# Assumed data input format is the returned format from scanGraphData(). 
+graph.data <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
+
 getAverageScans <- function(graph.data) {
   
   

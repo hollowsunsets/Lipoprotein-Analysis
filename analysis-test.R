@@ -8,7 +8,7 @@ test3 <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE)
 
 scan.data.test <- test2[,1:6]
 scan.data.test2 <- test3[,1:6]
-scan.data.test.gg <- test[]
+
 # TO-DO:
 # Test multi-line plots on plotly
 # Create average data function

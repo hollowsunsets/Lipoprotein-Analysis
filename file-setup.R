@@ -5,8 +5,12 @@ library(xlsx) # dependency for reading in .xlsx files
 
 # ---------------------- Functions -------------------------------
 
+raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE)
+
+
 # With the given scan files, returns a data frame that has 
 # contains the relevant scan data, prepared to be graphed.
+# This takes around 9 seconds to run, mostly because of the polynomial regression calculations :(
 scanGraphData <- function(raw.scans.file) {
   # Remove all rows before the rows that contain diameter and count data
   diameter.row.index <- grep("^Raw", raw.scans.file[,1])
@@ -33,12 +37,24 @@ scanGraphData <- function(raw.scans.file) {
                                              ((25.02 * exp(-0.2382 * diameters$Diameter..1)) + # formula starts here
                                              (950.9 * exp(-1.017 * diameters$Diameter..1)) + 1)
   
-  # Combine diameters and the filtered, processed scans into one data frame
-  scan.graph.data <- cbind(diameters, filtered.scans)
+  filtered.scans <- cbind(diameters, filtered.scans)
   
+  # Split the filtered dataframe by into dataframes for each sample with corresponding scan data and diameters
+  # Local polynomical regression is applied to predict data
+  scan.graph.data <- vector("list", (ncol(filtered.scans)/4)) # size of vector is set to number of samples
+  scan.index <- 1
+  for (i in 1:length(scan.graph.data)) {
+    scan.graph.data[[i]] <- data.frame(
+                                    sample.diameters = diameters$Diameter..1[1:5100],
+                                    scan1 = predict(loess(filtered.scans[,scan.index + 1] ~ `Diameter..1`, filtered.scans)),
+                                    scan2 = predict(loess(filtered.scans[,scan.index + 2] ~ `Diameter..1`, filtered.scans)),
+                                    scan3 = predict(loess(filtered.scans[,scan.index + 3] ~ `Diameter..1`, filtered.scans)),
+                                    scan4 = predict(loess(filtered.scans[,scan.index + 4] ~ `Diameter..1`, filtered.scans))
+                            )
+    scan.index <- scan.index + 4
+  }
   return(scan.graph.data)                                      
 }
-
 # Returns a data frame to be graphed from the given amplog file.
 ampGraphData <- function(raw.amplog.file) {
   amp.graph.data <- raw.amplog.file %>% select(X1, X3) 

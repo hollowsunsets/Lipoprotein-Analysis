@@ -300,8 +300,9 @@ server <- function(input, output) {
       result <- vector("list", (ncol(svp)-1)/4)
       svp_index=1
       for (i in 1:length(result)){
+        print(svp[svp_index + 1])
         result[[i]]<-data.frame(
-          diameter = svp$diameters[1:1150],
+          diameters = svp$diameters[1:1150],
           scan1 = predict(loess(svp[,svp_index+1]~diameters, svp, span = as.numeric(input$param))),
           scan2 = predict(loess(svp[,svp_index+2]~diameters, svp, span = as.numeric(input$param))),
           scan3 = predict(loess(svp[,svp_index+3]~diameters, svp, span = as.numeric(input$param))),

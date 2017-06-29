@@ -22,6 +22,7 @@ shinyUI(fluidPage(
                             "text/comma-separated-values,text/plain",
                             ".csv",".xlsx")),
       tags$hr(),
+      uiOutput("scanPlotDone"),
       uiOutput("scanLabels"),
       uiOutput("addScans"),
       uiOutput("removeScans"),
@@ -30,7 +31,13 @@ shinyUI(fluidPage(
 
     mainPanel(
       conditionalPanel(
-        condition = "output.scanPlot", 
+        condition = "output.scanPlotDone",
+        selectInput("removeScans", label = h4("Remove a Scan"), 
+                    choices = list(1, 2, 3, 4),
+                    selected = "None"),
+        selectInput("addScans", label = h4("Add a Scan"),
+                    choices = list(1, 2, 3, 4),
+                    selected = "None"),
         plotOutput("scanPlot")
       ),
       conditionalPanel(
