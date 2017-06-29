@@ -38,12 +38,12 @@ shinyServer(function(input, output) {
    output$scanPlot <- renderPlot({
      output$scanPlotDone <- renderUI({
        tags$input(type="hidden", value = "TRUE")
-       if (!is.null(input$scans)) {
-         scan.graph.data <- scanGraphData(scans.data)
-         if (!is.null(input$sparklink)) {
-           graph.labels <- getSampleLabels(sparklink.data)
+       if (!is.null(input$scans)) { # If the scans file was provided, then plot will be generated
+         if (!is.null(input$sparklinkData)) {
+           scan.graph.data <- scanGraphData(scans.data, sparklink.data) # if the sparklink file was provided, 
+                                                                        # then labels will be set to sparklink labels
          } else {
-           graph.labels <- c(paste0("sample ", 1:length(scans.data)))
+           scan.graph.data <- scanGraphData(scans.data) # else, set to default of "sample 1, sample 2, ..., etc"
          }
        }
      })
@@ -57,10 +57,7 @@ shinyServer(function(input, output) {
        amp.plot <- p 
      }
    })
-   
-   output$scanLabels <- renderUI({
-   })
-   
+
    output$addScans <- renderUI({ # these should really only appear when the graph is already rendered
      if (is.null()) return(NULL)
      selectInput("addScans", label = h4("Add a Scan"), choices = scansDropped)

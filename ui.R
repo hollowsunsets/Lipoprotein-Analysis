@@ -22,11 +22,8 @@ shinyUI(fluidPage(
                             "text/comma-separated-values,text/plain",
                             ".csv",".xlsx")),
       tags$hr(),
-      uiOutput("scanPlotDone"),
-      uiOutput("scanLabels"),
-      uiOutput("addScans"),
-      uiOutput("removeScans"),
-      uiOutput("averageScans")
+      uiOutput("scanPlotDone")
+      
     ),
 
     mainPanel(
