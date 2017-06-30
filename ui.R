@@ -27,16 +27,11 @@ shinyUI(fluidPage(
           uiOutput("sampleControl"),
           uiOutput("removeScans"),
           uiOutput("addScans"),
-          selectInput("removeScans", label = "Remove a Scan", 
-                      choices = list(1, 2, 3, 4),
-                      selected = "None"),
-          selectInput("addScans", label = "Add a Scan",
-                      choices = scansDropped,
-                      selected = "None"),
           downloadButton("averageScans", label = "Get Average Scans")),
       div(id = "amplog-interactions",
           h3("Amplog Graph Interactions"),
-          uiOutput())
+          uiOutput("timeControl"),
+          uiOutput("nmControl"))
     ),
 
     mainPanel(

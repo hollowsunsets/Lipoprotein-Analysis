@@ -12,6 +12,8 @@ source("graph-alteration.R")
 source("graph-analysis.R")
 
 shinyServer(function(input, output) {
+  
+  # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
    sparklink.data <- reactive({
@@ -44,6 +46,7 @@ shinyServer(function(input, output) {
      ampGraphData(read.xlsx(infile$datapath, sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
    })
      
+   # ----------------------------------------- Scan Interaction Functions ---------------------------------------- #
    output$sampleControl <- renderUI({
      selectInput("sampleSelect", label = "Select a Sample",
                  choices = names(scans.data()), selected = names(scans.data())[1])
@@ -51,29 +54,49 @@ shinyServer(function(input, output) {
    
    current_scan_data <- reactive({
      if (any(input$sampleSelect %in% names(scans.data()))) {
-       
+       # return the dataframe that corresponds with input$sampleSelect
+       scans.data()$input$sampleSelect   # should be something like graph.data$`std 1` which will return corresponding data frame
+     }
+   })
+   
+   current_average_data <- reactive({
+     if (is.null(current_scan_data())) {
+       return(NULL)
+     }
+     averageScans(current_scan.data())
+   })
+   
+   # Generates average scan file to be returned through download button
+   output$averageScans <- reactive({
+     filename = function() {
+       paste("average-scans", '.csv', sep='')
+     }
+     content = function(file) {
+       write.csv(current_average_data(), file)
      }
    })
    
    output$removeScans <- renderUI({
      scan.state <- current_scan_data() %>% select(startsWith("scan"))
      selectInput("scansToRemove", label = "Remove a Scan", 
-                 choices = colnames(scan.state),
-                 selected = "None")
+                 choices = colnames(scan.state))
    })
    
    output$addScans <- renderUI({
      scan.state <- current_scan_data() %>% select(startsWith("scan"))
-     curr.scan.names <- colnames(scan.state) 
+     curr.scan.names <- colnames(scan.state)[-scansDropped]
+     if (length(scansDropped) == 0) {
+       curr.scan.names <- c("None")
+     }
      selectInput("scansToAdd", label = "Add a Scan",
-                 choices = curr.scan.names[-scansDropped],
-                 selected = "None")
+                 choices = curr.scan.names)
    })
 
-   
+  # ---------------------------------- Amplog Interactions Functions ----------------------------- #
 
-  # ------------------------------------------------------------------------------------------------------ #
-   # Generates the graph that visualizes the scan data 
+   
+   
+  # ------------------------------------ Graph Rendering ----------------------------------------- #
    
 
     
@@ -97,19 +120,7 @@ shinyServer(function(input, output) {
      }
    })
    
-   # Generates average scan file to be returned through download button
-   output$averageScans <- reactive({
-     filename = function() {
-       paste("average-scans", '.csv', sep='')
-     }
-     content = function(file) {
-       if (averageScans == currentAverageScansNameThing) { # if the current average scans dataset is what we want, we shouldn't process it again
-         return(averageScans)
-       }
-       averageScans(dataset)
-       write.csv(dataSetInput(), file)
-     }
-   })
+   
    
   
 })
