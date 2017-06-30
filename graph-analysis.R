@@ -14,13 +14,26 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 # See following link for example: https://moderndata.plot.ly/interactive-r-visualizations-with-d3-ggplot2-rstudio/
 
 graph.data <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
+test.graph.data <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors = FALSE), 
+                                 read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE))
+sample.names <- read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE) 
+sample.names <- sample.names %>% select(Sample.Name)
 names(graph.data)
 # Assumed data input format is the returned format from scanGraphData(). 
-getAverageScans <- function(graph.data, graph.labels = NULL) {
-  
-  for (i in 1:length(graph.data)){
-    
+# Averages the data from all four scans into one dataset for each sample
+# Returns in the format of a dataframe.
+
+getAverageScans <- function(graph.data, sample.names = NULL) {
+  avg.scans <- data.frame(names(graph.data))
+  if (!(is.null(sample.names))) {
+    avg.scans[,1] <- as.data.frame(sample.names[,1])
   }
+  avg.scans <- avg.scans %>% mutate(n=n())
+  for (i in 1:length(graph.data)){
+    avg.scans <- avg.scans %>% mutate("")
+  }
+  colnames(avg.scans) <- colnames(graph.data)
+  
   
   return(avg.scans)
 }

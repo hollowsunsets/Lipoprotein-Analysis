@@ -21,26 +21,23 @@ shinyUI(fluidPage(
                  accept = c("text/csv",
                             "text/comma-separated-values,text/plain",
                             ".csv",".xlsx")),
-      tags$hr(),
-      uiOutput("scanPlotDone")
-      
+      div(id = "scan-interactions", 
+          h3("Scan Graph Interactions"),
+          selectInput("removeScans", label = "Remove a Scan", 
+                      choices = list(1, 2, 3, 4),
+                      selected = "None"),
+          selectInput("addScans", label = "Add a Scan",
+                      choices = list(1, 2, 3, 4),
+                      selected = "None"))
     ),
 
     mainPanel(
-      conditionalPanel(
-        condition = "output.scanPlotDone",
-        selectInput("removeScans", label = h4("Remove a Scan"), 
-                    choices = list(1, 2, 3, 4),
-                    selected = "None"),
-        selectInput("addScans", label = h4("Add a Scan"),
-                    choices = list(1, 2, 3, 4),
-                    selected = "None"),
-        plotOutput("scanPlot")
-      ),
-      conditionalPanel(
-        condition = "output.ampPlot",
-        plotOutput("ampPlot")
+        div(id = "scan-message", "Please provide a scan dataset to view the scan visualization."),
+            plotOutput("scanPlot"),
+        div(id = "amp-message", "Please provide an amplog dataset to view the amplog visualization."),
+        div(id = "ampPlot", 
+            plotOutput("ampPlot"))
       )
     )
-  )
 ))
+  

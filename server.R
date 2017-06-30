@@ -2,6 +2,7 @@ library(shiny)
 library(dplyr)
 library(xlsx)
 library(ggplot2)
+options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
 source("file-setup.R")
 source("graph-alteration.R")
@@ -36,8 +37,6 @@ shinyServer(function(input, output) {
   # ------------------------------------------------------------------------------------------------------ #
    # Generates the graph that visualizes the scan data 
    output$scanPlot <- renderPlot({
-     output$scanPlotDone <- renderUI({
-       tags$input(type="hidden", value = "TRUE")
        if (!is.null(input$scans)) { # If the scans file was provided, then plot will be generated
          if (!is.null(input$sparklinkData)) {
            scan.graph.data <- scanGraphData(scans.data, sparklink.data) # if the sparklink file was provided, 
@@ -45,27 +44,18 @@ shinyServer(function(input, output) {
          } else {
            scan.graph.data <- scanGraphData(scans.data) # else, set to default of "sample 1, sample 2, ..., etc"
          }
+       } else {
+         return(NULL)
        }
-     })
-     
    })
    
    # Generates the graph that visualizes the amplog data
    output$ampPlot <- renderPlot({
+     print("entered renderPlot for ampPlot")
      if (!is.null(input$amplog)) {
        amp.data <- ampGraphData(amplog.data)
        amp.plot <- p 
      }
-   })
-
-   output$addScans <- renderUI({ # these should really only appear when the graph is already rendered
-     if (is.null()) return(NULL)
-     selectInput("addScans", label = h4("Add a Scan"), choices = scansDropped)
-   })
-   
-   output$removeScans <- renderUI({
-     if (is.null(scans.data())) return(NULL)
-     selectInput("removeScans", label= h4("Remove a Scan"), choices = scanChoices) # get scan choices from graph name
    })
    
    # Generates average scan file to be returned through download button

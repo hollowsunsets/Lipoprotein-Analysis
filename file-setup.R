@@ -5,8 +5,6 @@ library(xlsx) # dependency for reading in .xlsx files
 
 # ---------------------- Functions -------------------------------
 
-raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE)
-
 
 # With the given scan files, returns a data frame that has 
 # contains the relevant scan data, prepared to be graphed.
@@ -46,7 +44,7 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   # Index is pointer for traversing through filtered data 
   scan.index <- 1
   
-  # Split the filtered scans dataframe by into dataframes - each corresponding to a sample, with corresponding scan data and diameters
+  # Split the filtered scans dataframe into smaller dataframes - each corresponding to a sample, with corresponding scan data and diameters
   # Local polynomical regression is applied to predict data
   # i.e: sample1 --- example of dataframes that populate the vector
   #     scan1             -0.466  -0.431 -0.431 -0.419 -0.419 ...
@@ -68,7 +66,7 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
     # Adds sample dataframe to the vector that will contain all sample data frames
     scan.graph.data[[i]] <- sample.data 
     # Updates index so the next set of scans can be retrieved
-    scan.index <- scan.index + 4
+    scan.index <- scan.index + 4  
   }
   
   # Set the names of the sample data frames
