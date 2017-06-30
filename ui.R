@@ -23,12 +23,20 @@ shinyUI(fluidPage(
                             ".csv",".xlsx")),
       div(id = "scan-interactions", 
           h3("Scan Graph Interactions"),
+          p("Choose a subset of scan data that you wish to visualize."),
+          uiOutput("sampleControl"),
+          uiOutput("removeScans"),
+          uiOutput("addScans"),
           selectInput("removeScans", label = "Remove a Scan", 
                       choices = list(1, 2, 3, 4),
                       selected = "None"),
           selectInput("addScans", label = "Add a Scan",
-                      choices = list(1, 2, 3, 4),
-                      selected = "None"))
+                      choices = scansDropped,
+                      selected = "None"),
+          downloadButton("averageScans", label = "Get Average Scans")),
+      div(id = "amplog-interactions",
+          h3("Amplog Graph Interactions"),
+          uiOutput())
     ),
 
     mainPanel(

@@ -81,6 +81,13 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   return(scan.graph.data)                                      
 }
 
+# Function for setting the column names of the graph data so the 
+# data processing doesn't have to be run through again. 
+# Assumed format is Sparklink labels format.
+setGraphLabels <- function(graph.labels, graph.data) {
+  names(graph.data) <- graph.labels[,1]
+}
+
 # Returns a data frame to be graphed from the given amplog file.
 ampGraphData <- function(raw.amplog.file) {
   amp.graph.data <- raw.amplog.file %>% select(X1, X3) 
