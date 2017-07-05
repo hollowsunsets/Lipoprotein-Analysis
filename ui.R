@@ -21,17 +21,22 @@ shinyUI(fluidPage(
                  accept = c("text/csv",
                             "text/comma-separated-values,text/plain",
                             ".csv",".xlsx")),
-      div(id = "scan-interactions", 
-          h3("Scan Graph Interactions"),
-          p("Choose a subset of scan data that you wish to visualize."),
-          uiOutput("sampleControl"),
-          uiOutput("removeScans"),
-          uiOutput("addScans"),
-          downloadButton("averageScans", label = "Get Average Scans")),
-      div(id = "amplog-interactions",
-          h3("Amplog Graph Interactions"),
-          uiOutput("timeControl"),
-          uiOutput("nmControl"))
+      useShinyjs(),
+      hidden(
+        div(id = "scan-interactions", 
+            h3("Scan Graph Interactions"),
+            p("Choose a subset of scan data that you wish to visualize."),
+            uiOutput("sampleControl"),
+            uiOutput("removeScans"),
+            uiOutput("addScans"),
+          downloadButton("averageScans", label = "Get Average Scans"))
+        ),
+      hidden(
+        div(id = "amplog-interactions",
+            h3("Amplog Graph Interactions"),
+            uiOutput("timeControl"),
+            uiOutput("nmControl"))
+      )
     ),
 
     mainPanel(
