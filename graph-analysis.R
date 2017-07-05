@@ -13,12 +13,23 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 # NOTE: Deleted findGraphPeak. This is easy to do with dplyr. Add annotations on with plot_ly.
 # See following link for example: https://moderndata.plot.ly/interactive-r-visualizations-with-d3-ggplot2-rstudio/
 
-graph.data <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
-test.graph.data <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors = FALSE), 
-                                 read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE))
-sample.names <- read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE) 
-sample.names <- sample.names %>% select(Sample.Name)
-names(graph.data)
+
+
+
+#graph.data <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
+#test.graph.data <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors = FALSE), 
+                                # read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE))
+#sample.names <- read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE) 
+#sample.names <- sample.names %>% select(Sample.Name)
+#names(graph.data)
+
+
+
+
+
+
+
+
 # Assumed data input format is the returned format from scanGraphData(). 
 # Averages the data from all four scans into one dataset for each sample
 # Returns in the format of a dataframe.

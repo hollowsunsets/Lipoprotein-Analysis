@@ -2,14 +2,14 @@ library(shiny)
 library(shinyjs)
 library(dplyr)
 library(xlsx)
-library(ggplot2)
+library(plotly)
 
 
 options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
 source("file-setup.R")
-source("graph-alteration.R")
-source("graph-analysis.R")
+# source("graph-alteration.R")
+# source("graph-analysis.R")
 
 shinyServer(function(input, output) {
   
@@ -32,7 +32,9 @@ shinyServer(function(input, output) {
        return(NULL)
      }
      if (!is.null(input$sparklinkData)) {
-       scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE), sparklink.data) # if the sparklink file was provided, 
+       print("sparklink dataset was provided, labels should be replaced")
+       print(sparklink.data)
+       scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE), sparklink.data()) # if the sparklink file was provided, 
      } else {
        scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE)) # else, set to default of "sample 1, sample 2, ..., etc"
      }
@@ -55,7 +57,7 @@ shinyServer(function(input, output) {
    current_scan_data <- reactive({
      if (any(input$sampleSelect %in% names(scans.data()))) {
        # return the dataframe that corresponds with input$sampleSelect
-       scans.data()$input$sampleSelect   # should be something like graph.data$`std 1` which will return corresponding data frame
+       scans.data()[[input$sampleSelect]]   # should be something like graph.data$`std 1` which will return corresponding data frame
      }
    })
    
@@ -77,15 +79,19 @@ shinyServer(function(input, output) {
    })
    
    output$removeScans <- renderUI({
-     scan.state <- current_scan_data() %>% select(startsWith("scan"))
+     curr.scan.data <- current_scan_data()
+     scan.state <- select(curr.scan.data, starts_with("scan"))
      selectInput("scansToRemove", label = "Remove a Scan", 
                  choices = colnames(scan.state))
    })
    
    output$addScans <- renderUI({
-     scan.state <- current_scan_data() %>% select(startsWith("scan"))
+     curr.scan.data <- current_scan_data()
+     scan.state <- select(curr.scan.data, starts_with("scan"))
      curr.scan.names <- colnames(scan.state)[-scansDropped]
-     if (length(scansDropped) == 0) {
+     print(curr.scan.names)
+     print(length(scansDropped))
+     if (length(scansDropped) == 1) {
        curr.scan.names <- c("None")
      }
      selectInput("scansToAdd", label = "Add a Scan",
@@ -104,10 +110,11 @@ shinyServer(function(input, output) {
        if (!is.null(input$scans)) { # If the scans file was provided, then plot will be generated
          # Plot dataset 
          
-         p2 <- plot_ly(current_scan_data()), y = ~`Counts..3`, x = ~`Diameter..1`, name = 'scan1', type = 'scatter', mode = 'lines') %>%
-           add_trace(y = ~`Counts..4`, name = 'scan2') %>%
-           add_trace(y = ~`Counts..5`, name = 'scan3') %>%
-           add_trace(y = ~`Counts..6`, name= 'scan4')
+         scanp <- plot_ly(current_scan_data(), y = ~scan1, x = ~sample.diameters, name = 'scan1', type = 'scatter', mode = 'lines') %>%
+           add_trace(y = ~scan2, name = 'scan2') %>%
+           add_trace(y = ~scan3, name = 'scan3') %>%
+           add_trace(y = ~scan4, name= 'scan4')
+         return(scanp)
        } else {
          return(NULL)
        }
