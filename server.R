@@ -70,7 +70,11 @@ shinyServer(function(input, output, session) {
      print("current state for scan graph is constructed")
      if (any(input$sampleSelect %in% names(scan.data))) {
        # return the dataframe that corresponds with input$sampleSelect
-       return(applyLoessSmooth(scan.data[[input$sampleSelect]], input$customSmooth))  # should be something like graph.data$`std 1` which will return corresponding data frame
+       if (input$customSmooth > 0.01) {
+         return(applyLoessSmooth(scan.data[[input$sampleSelect]], input$customSmooth)) 
+       } else {
+         return(scan.data[[input$sampleSelect]])
+       }# should be something like graph.data$`std 1` which will return corresponding data frame
      } else {
        return(scan.data[[1]])
      }
@@ -151,8 +155,7 @@ shinyServer(function(input, output, session) {
    observeEvent(input$customSmooth, {
      curr.scan.state <<- current_scan_data()
      print("data is being changed to match given smoothing span")
-     print(input$customSmooth)
-     if (input$customSmooth > 0.0) {
+     if (input$customSmooth > 0.01) {
        loess.graph.data <- applyLoessSmooth(curr.scan.state, input$customSmooth)
        curr.scan.state <<- loess.graph.data
      }
