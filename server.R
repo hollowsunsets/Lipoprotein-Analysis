@@ -15,6 +15,7 @@ shinyServer(function(input, output) {
   scan.data <- 0
   amp.data <- 0
   curr.scan.state <- 0 
+  curr.loess.scan.state <- 0
   curr.amp.state <- 0
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
@@ -125,13 +126,21 @@ shinyServer(function(input, output) {
      
    })
    
+
    observeEvent(input$customSmooth, {
-     prev.dataset <- curr.scan.state[1:4]
+     loess.graph.data <- curr.scan.state[1:4]
+     loess.filter <- function(x, smooth.span, main.dataset, end.subset) {
+       predict(loess(x ~ end.subset, main.dataset, span = smooth.span))
+     }
+     loess.graph.data2 <- as.data.frame(lapply(loess.graph.data, loess.filter, 
+                                              main.dataset = loess.graph.data,
+                                              smooth.span = input$customSmooth, 
+                                              end.subset = curr.scan.state$sample.diameters))
+     sample.rows <- length(loess.graph.data$scan1)
+     loess.graph.data <- loess.graph.data %>% mutate("sample.diameters" = curr.scan.state$sample.diameters[1:sample.rows]) 
+     curr.loess.scan.state <<- loess.graph.data
      
-     # Apply modified loess regression to data
-     
-     
-   })
+   }, ignoreNULL = FALSE)
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
 
