@@ -39,8 +39,17 @@ addBackScan <- function(graph.data, scan.number, original.data) {
   return(graph.data)
 }
 
-changeGraphScale <- function(graph.data, parameter) {
-  # do whatever JC did with the parameter with ggplot2
-  # plot.ly also scales so you could easily use that instead
+calcSSE <- function(x){
+  loessMod <- try(loess(uempmed ~ index, data=economics, span=x), silent=T)
+  res <- try(loessMod$residuals, silent=T)
+  if(class(res)!="try-error"){
+    if((sum(res, na.rm=T) > 0)){
+      sse <- sum(res^2)  
+    }
+  }else{
+    sse <- 99999
+  }
+  return(sse)
 }
+
 

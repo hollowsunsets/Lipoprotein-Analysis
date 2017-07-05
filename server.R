@@ -2,7 +2,7 @@ library(shiny)
 library(shinyjs)
 library(dplyr)
 library(xlsx)
-library(plotly)
+library(ggplot2)
 
 
 options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
@@ -31,9 +31,9 @@ shinyServer(function(input, output) {
      if (is.null(infile)) {
        return(NULL)
      }
+     print("scan interactions should be showing now...")
+     show("scan-interactions")
      if (!is.null(input$sparklinkData)) {
-       print("sparklink dataset was provided, labels should be replaced")
-       print(sparklink.data)
        scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE), sparklink.data()) # if the sparklink file was provided, 
      } else {
        scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE)) # else, set to default of "sample 1, sample 2, ..., etc"
@@ -45,6 +45,7 @@ shinyServer(function(input, output) {
      if (is.null(infile)) {
        return(NULL)
      }
+     show("amplog-interactions")
      ampGraphData(read.xlsx(infile$datapath, sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
    })
      
@@ -95,7 +96,11 @@ shinyServer(function(input, output) {
      selectInput("scansToAdd", label = "Add a Scan",
                  choices = curr.scan.names)
    })
-
+   
+   observeEvent(input$optimizeSmooth, {
+     
+   })
+   
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
 
    
@@ -104,11 +109,11 @@ shinyServer(function(input, output) {
    
 
     
-   output$scanPlot <- renderPlotly({
-       if (!is.null(input$scans)) { # If the scans file was provided, then plot will be generated
+   output$scanPlot <- renderPlot({
+       if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
          # Plot dataset 
          
-         scanp <- plot_ly(current_scan_data(), y = ~scan1, x = ~sample.diameters, name = 'scan1', type = 'scatter', mode = 'lines') %>%
+         scan.plot <- plot_ly(current_scan_data(), y = ~scan1, x = ~sample.diameters, name = 'scan1', type = 'scatter', mode = 'lines') %>%
            add_trace(y = ~scan2, name = 'scan2') %>%
            add_trace(y = ~scan3, name = 'scan3') %>%
            add_trace(y = ~scan4, name= 'scan4')
@@ -122,10 +127,9 @@ shinyServer(function(input, output) {
    output$ampPlot <- renderPlot({
      print("entered renderPlot for ampPlot")
      if (!is.null(input$amplog)) {
+       amp.plot <- plot()
+     } else {
+       return(NULL)
      }
    })
-   
-   
-   
-  
 })
