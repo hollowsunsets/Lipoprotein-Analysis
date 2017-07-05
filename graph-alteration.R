@@ -55,4 +55,15 @@ calcSSE <- function(data.set, y.axis){
   return(sse)
 }
 
+loessFilter <- function(x, smooth.span) {
+  model <- loess(x ~ curr.scan.state$sample.diameters, curr.scan.state, span = smooth.span)
+  predict(model)
+}
 
+applyLoessSmooth <- function(curr.scan.state, smoothing.span) {
+  loess.graph.data <- curr.scan.state[1:4]
+  loess.graph.data <- as.data.frame(lapply(loess.graph.data, loess.filter, 
+                                           smooth.span = as.numeric(smoothing.span)))
+  sample.rows <- length(loess.graph.data$scan1)
+  loess.graph.data %>% mutate("sample.diameters" = curr.scan.state$sample.diameters[1:sample.rows]) 
+}

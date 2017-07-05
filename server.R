@@ -8,15 +8,14 @@ library(ggplot2)
 options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
 source("file-setup.R")
-# source("graph-alteration.R")
+source("graph-alteration.R")
 # source("graph-analysis.R")
 
-shinyServer(function(input, output) {
-  scan.data <- 0
-  amp.data <- 0
-  curr.scan.state <- 0 
-  curr.loess.scan.state <- 0
-  curr.amp.state <- 0
+shinyServer(function(input, output, session) {
+  scan.data <- NULL
+  amp.data <- NULL
+  curr.scan.state <- NULL 
+  curr.amp.state <- NULL
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
@@ -25,12 +24,14 @@ shinyServer(function(input, output) {
      if (is.null(infile)) {
        return(NULL)
      }
-     read.csv(infile$datapath, stringsAsFactors = FALSE)
+     sparklink.raw.data <- read.csv(infile$datapath, stringsAsFactors = FALSE)
+     return(sparklink.raw.data)
    })
    
    # Retrieves and reads in and processes scans dataset.
    # To-Do: Add check to ensure it is an accepted format.
    scans.data <- reactive({
+     print("scans.data has been read in")
      infile <- input$scansData
      if (is.null(infile)) {
        return(NULL)
@@ -57,11 +58,19 @@ shinyServer(function(input, output) {
                  choices = names(scan.data), selected = names(scan.data[1]))
    })
    
+   observe({
+     if (!is.null(input$sparklinkData)) {
+       sparklink.data <- sparklink.data()
+       sample.names <- sparklink.data %>% select(Sample.Name)
+       updateSelectInput(session, "sampleSelect", choices = sample.names[,1])
+     }
+   })
    
    current_scan_data <- reactive({
+     print("current state for scan graph is constructed")
      if (any(input$sampleSelect %in% names(scan.data))) {
        # return the dataframe that corresponds with input$sampleSelect
-       return(scan.data[[input$sampleSelect]])   # should be something like graph.data$`std 1` which will return corresponding data frame
+       return(applyLoessSmooth(scan.data[[input$sampleSelect]], input$customSmooth))  # should be something like graph.data$`std 1` which will return corresponding data frame
      } else {
        return(scan.data[[1]])
      }
@@ -81,8 +90,10 @@ shinyServer(function(input, output) {
    
    
    observeEvent(input$scansData, {
+     print("scan interactions are rendering")
      scan.data <<- scans.data()
      toggle("scan-interactions")
+     print("scan plot is rendering")
      toggle("scanPlot")
      toggle("scan-message")
    }, once = TRUE)
@@ -122,25 +133,32 @@ shinyServer(function(input, output) {
                  choices = curr.scan.names)
    })
    
+   output$smoothControl <- renderUI({
+     tagList(
+        p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
+        p("i.e: 0.10 = 10% smoothing span"),
+        textInput("customSmooth", "Enter Smoothing Span", "0.05"),
+        p("Click to optimize the smoothing to minimize the SSE (sum of squared errors)."),
+        actionButton("optimizeSmooth", "Optimize Smooth")
+     )
+   })
+   
    observeEvent(input$optimizeSmooth, {
      
    })
-   
 
+  
    observeEvent(input$customSmooth, {
-     loess.graph.data <- curr.scan.state[1:4]
-     loess.filter <- function(x, smooth.span, main.dataset, end.subset) {
-       predict(loess(x ~ end.subset, main.dataset, span = smooth.span))
+     curr.scan.state <<- current_scan_data()
+     print("data is being changed to match given smoothing span")
+     print(input$customSmooth)
+     if (input$customSmooth > 0.0) {
+       loess.graph.data <- applyLoessSmooth(curr.scan.state, input$customSmooth)
+       curr.scan.state <<- loess.graph.data
      }
-     loess.graph.data2 <- as.data.frame(lapply(loess.graph.data, loess.filter, 
-                                              main.dataset = loess.graph.data,
-                                              smooth.span = input$customSmooth, 
-                                              end.subset = curr.scan.state$sample.diameters))
-     sample.rows <- length(loess.graph.data$scan1)
-     loess.graph.data <- loess.graph.data %>% mutate("sample.diameters" = curr.scan.state$sample.diameters[1:sample.rows]) 
-     curr.loess.scan.state <<- loess.graph.data
-     
-   }, ignoreNULL = FALSE)
+   })
+  
+   
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
 
@@ -174,4 +192,6 @@ shinyServer(function(input, output) {
        return(NULL)
      }
    })
+   
+
 })

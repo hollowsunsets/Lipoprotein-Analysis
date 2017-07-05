@@ -32,11 +32,7 @@ shinyUI(fluidPage(
             h3("Scan Graph Interactions"),
             p("Choose a subset of scan data that you wish to visualize."),
             uiOutput("sampleControl"),
-            p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
-            p("i.e: 0.10 = 10% smoothing span"),
-            textInput("customSmooth", "Enter Smoothing Span", "0.05"),
-            p("Click to optimize the smoothing to minimize the SSE (sum of squared errors)."),
-            actionButton("optimizeSmooth", "Optimize Smooth"),
+            uiOutput("smoothControl"),
             uiOutput("removeScans"),
             uiOutput("addScans"),
             downloadButton("averageScans", label = "Get Average Scans"))
