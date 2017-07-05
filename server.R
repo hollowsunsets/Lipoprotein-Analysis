@@ -13,7 +13,9 @@ source("file-setup.R")
 
 shinyServer(function(input, output) {
   scan.data <- 0
-  curr.scan.state <- 0
+  amp.data <- 0
+  curr.scan.state <- 0 
+  curr.amp.state <- 0
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
@@ -45,8 +47,7 @@ shinyServer(function(input, output) {
      if (is.null(infile)) {
        return(NULL)
      }
-     show("amplog-interactions")
-     ampGraphData(read.xlsx(infile$datapath, sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
+     amp.data <<- ampGraphData(read.xlsx(infile$datapath, sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
    })
      
    # ----------------------------------------- Scan Interaction Functions ---------------------------------------- #
@@ -63,6 +64,11 @@ shinyServer(function(input, output) {
      } else {
        return(scan.data[[1]])
      }
+   })
+   
+   # Add any desired modifications to amplog data here
+   current_amp_data <- reactive({
+     return(amp.data)
    })
 
    current_average_data <- reactive({
@@ -81,6 +87,7 @@ shinyServer(function(input, output) {
    }, once = TRUE)
    
    observeEvent(input$amplogData, {
+     amp.data <<- amplog.data()
      toggle("amplog-interactions")
      toggle("ampPlot")
      toggle("amp-message")
@@ -121,6 +128,9 @@ shinyServer(function(input, output) {
    observeEvent(input$customSmooth, {
      prev.dataset <- curr.scan.state[1:4]
      
+     # Apply modified loess regression to data
+     
+     
    })
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
@@ -132,24 +142,24 @@ shinyServer(function(input, output) {
 
     
    output$scanPlot <- renderPlot({
-       curr.scan.state <<- current_scan_data()
-       if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
-         scan.plot <- ggplot(data=curr.scan.state, aes(sample.diameters)) + 
-                      geom_line(aes(color="scan 1",y=curr.scan.state[[1]])) + 
-                      geom_line(aes(color="scan 2",y=curr.scan.state[[2]])) + 
-                      geom_line(aes(color="scan 3",y=curr.scan.state[[3]])) +
-                      geom_line(aes(color="scan 4",y=curr.scan.state[[4]]))
-         return(scan.plot)
-       } else {
-         return(NULL)
-       }
+     curr.scan.state <<- current_scan_data()
+     if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
+       scan.plot <- ggplot(data=curr.scan.state, aes(sample.diameters)) + 
+         geom_line(aes(color="scan 1",y=curr.scan.state[[1]])) + 
+         geom_line(aes(color="scan 2",y=curr.scan.state[[2]])) + 
+         geom_line(aes(color="scan 3",y=curr.scan.state[[3]])) +
+         geom_line(aes(color="scan 4",y=curr.scan.state[[4]]))
+       return(scan.plot)
+     } else {
+       return(NULL)
+     }
    })
    
    # Generates the graph that visualizes the amplog data
    output$ampPlot <- renderPlot({
-     print("entered renderPlot for ampPlot")
+     curr.amp.state <<- current_amp_data()
      if (!is.null(input$amplog)) {
-       amp.plot <- plot()
+       amp.plot <- ggplot(data=curr.amp.state, aes(x = X1, y = X3, group=1)) + geom_line()
        return(amp.plot)
      } else {
        return(NULL)
