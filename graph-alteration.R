@@ -39,8 +39,11 @@ addBackScan <- function(graph.data, scan.number, original.data) {
   return(graph.data)
 }
 
-calcSSE <- function(x){
-  loessMod <- try(loess(uempmed ~ index, data=economics, span=x), silent=T)
+# Calculates SSE for the given dataset, correlated for the chosen referential y-axis. 
+calcSSE <- function(data.set, y.axis){
+  data.set.state <- data.set
+  data.set.state$index <- 1:nrow(data.set)
+  loessMod <- try(loess(y.axis ~ index, data=data.set.state, span=x), silent=T)
   res <- try(loessMod$residuals, silent=T)
   if(class(res)!="try-error"){
     if((sum(res, na.rm=T) > 0)){

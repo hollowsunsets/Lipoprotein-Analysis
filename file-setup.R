@@ -54,10 +54,10 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   #     sample.diameters   5.97    5.97   5.97   5.98   5.98
   for (i in 1:length(scan.graph.data)) {
     sample.data <- data.frame(      # NOTE: loess rounds down the rows in the given data
-                                    scan1 = predict(loess(filtered.scans[,scan.index + 1] ~ `Diameter..1`, filtered.scans)), 
-                                    scan2 = predict(loess(filtered.scans[,scan.index + 2] ~ `Diameter..1`, filtered.scans)),
-                                    scan3 = predict(loess(filtered.scans[,scan.index + 3] ~ `Diameter..1`, filtered.scans)),
-                                    scan4 = predict(loess(filtered.scans[,scan.index + 4] ~ `Diameter..1`, filtered.scans))
+                                    scan1 = predict(loess(filtered.scans[,scan.index + 1] ~ `Diameter..1`, filtered.scans, span = 0.05)), 
+                                    scan2 = predict(loess(filtered.scans[,scan.index + 2] ~ `Diameter..1`, filtered.scans, span = 0.05)),
+                                    scan3 = predict(loess(filtered.scans[,scan.index + 3] ~ `Diameter..1`, filtered.scans, span = 0.05)),
+                                    scan4 = predict(loess(filtered.scans[,scan.index + 4] ~ `Diameter..1`, filtered.scans, span = 0.05))
                             )
     # Retrieves the altered row count so diameters can be added successfully (restriction of R dataframes)
     sample.rows <- length(sample.data$scan1) 

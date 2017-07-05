@@ -23,6 +23,10 @@ shinyUI(fluidPage(
                             "text/comma-separated-values,text/plain",
                             ".csv",".xlsx")),
       useShinyjs(),  
+      actionButton("test", "Test Me"),
+      hidden(
+        p(id = "element", "Shiny JS is actually working bro")
+      ),
       hidden(
         div(id = "scan-interactions", 
             h3("Scan Graph Interactions"),
@@ -46,11 +50,17 @@ shinyUI(fluidPage(
     ),
 
     mainPanel(
+      useShinyjs(),
         div(id = "scan-message", "Please provide a scan dataset to view the scan visualization."),
-            plotOutput("scanPlot"),
+        hidden(
+          div(id = "scanPlot",
+              plotOutput("scanPlot"))
+          ),
         div(id = "amp-message", "Please provide an amplog dataset to view the amplog visualization."),
+        hidden(
         div(id = "ampPlot", 
             plotOutput("ampPlot"))
+        )
       )
     )
 ))
