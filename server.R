@@ -89,9 +89,7 @@ shinyServer(function(input, output) {
      curr.scan.data <- current_scan_data()
      scan.state <- select(curr.scan.data, starts_with("scan"))
      curr.scan.names <- colnames(scan.state)[-scansDropped]
-     print(curr.scan.names)
-     print(length(scansDropped))
-     if (length(scansDropped) == 1) {
+     if (length(curr.scan.names) == 0) {
        curr.scan.names <- c("None")
      }
      selectInput("scansToAdd", label = "Add a Scan",
