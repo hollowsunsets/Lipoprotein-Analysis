@@ -46,7 +46,8 @@ shinyUI(fluidPage(
         div(id = "scan-message", "Please provide a scan dataset to view the scan visualization."),
         hidden(
           div(id = "scanPlot",
-              plotOutput("scanPlot"))
+              #plotOutput("scanPlot"))
+              ggvisOutput("ggvis"))
           ),
         div(id = "amp-message", "Please provide an amplog dataset to view the amplog visualization."),
         hidden(

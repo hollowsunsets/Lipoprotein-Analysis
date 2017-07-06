@@ -1,9 +1,10 @@
+  # -------------------------------------------------- Dependencies ------------------------------------------------ #
 library(shiny)
 library(shinyjs)
 library(dplyr)
 library(xlsx)
 library(ggplot2)
-
+library(ggvis)
 
 options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
@@ -12,10 +13,15 @@ source("graph-alteration.R")
 # source("graph-analysis.R")
 
 shinyServer(function(input, output, session) {
+  
+  # ---------------------------------------------- Global Variables ------------------------------------------------ # 
   scan.data <- NULL
   amp.data <- NULL
+  curr.unmod.scan.state <- NULL
   curr.scan.state <- NULL 
+  curr.unmod.amp.state <- NULL
   curr.amp.state <- NULL
+  
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
@@ -167,23 +173,36 @@ shinyServer(function(input, output, session) {
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
    
-   output$scanPlot <- renderPlot({
-     curr.scan.state <<- current_scan_data()
-     if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
-       scan.plot <- ggplot(data=curr.scan.state, aes(sample.diameters)) + 
-         geom_line(aes(color="scan 1",y=curr.scan.state[[1]])) + 
-         geom_line(aes(color="scan 2",y=curr.scan.state[[2]])) + 
-         geom_line(aes(color="scan 3",y=curr.scan.state[[3]])) +
-         geom_line(aes(color="scan 4",y=curr.scan.state[[4]])) + 
-         xlab("Diameters (nm)") +
-         ylab("Concentration (dN#/cm^2)") +
-         ggtitle(paste0(input$sampleSelect)) + 
-            theme(plot.title = element_text(hjust = 0.5))
-       return(scan.plot)
-     } else {
-       return(NULL)
-     }
-   })
+ #  output$scanPlot <- renderPlot({
+  #   curr.scan.state <<- current_scan_data()
+   #  if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
+   #    scan.plot <- na.omit(curr.scan.state) %>%
+    #     ggvis() %>%
+     #    layer_paths(~sample.diameters, ~scan1, stroke = "red") %>%
+      #   layer_paths(~sample.diameters, ~scan2, stroke = "blue") %>%
+       #  layer_paths(~sample.diameters, ~scan3, stroke = "green") %>%
+        # layer_paths(~sample.diameters, ~scan4, stroke = "pink") %>%
+      #   bind_shiny("ggvis", "ggvis_ui")
+       
+  #     return(scan.plot)
+  #   } else {
+   #    return(NULL)
+   #  }
+  # })
+   
+   # Generates the graph that visualizes the scan data
+    observeEvent({input$sampleSelect
+                  input$customSmooth}, {
+      curr.scan.state <<- current_scan_data()
+      na.omit(curr.scan.state) %>%
+        ggvis() %>%
+          layer_paths(~sample.diameters, ~scan1, stroke = "blue") %>%
+          layer_paths(~sample.diameters, ~scan2, stroke = "green") %>%
+          layer_paths(~sample.diameters, ~scan3, stroke = "orange") %>%
+          layer_paths(~sample.diameters, ~scan4, stroke = "red") %>%
+          set_options(width = "auto", height = "auto") %>%
+          bind_shiny("ggvis", "ggvis_ui")
+    })
    
    # Generates the graph that visualizes the amplog data
    output$ampPlot <- renderPlot({
