@@ -189,7 +189,7 @@ shinyServer(function(input, output, session) {
    output$ampPlot <- renderPlot({
      curr.amp.state <<- current_amp_data()
      if (!is.null(input$amplog)) {
-       amp.plot <- ggplot(data=curr.amp.state, aes(x = X1, y = X3, group=1)) + geom_line()
+       
        return(amp.plot)
      } else {
        return(NULL)
