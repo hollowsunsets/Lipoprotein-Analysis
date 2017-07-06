@@ -71,18 +71,13 @@ shinyServer(function(input, output, session) {
      if (any(input$sampleSelect %in% names(scan.data))) {
        # return the dataframe that corresponds with input$sampleSelect
        if (input$customSmooth > 0.01) {
-         return(applyLoessSmooth(scan.data[[input$sampleSelect]], input$customSmooth)) 
+         return(applyLoessSmooth(scan.data[[input$sampleSelect]], as.numeric(input$customSmooth))) 
        } else {
          return(scan.data[[input$sampleSelect]])
        }# should be something like graph.data$`std 1` which will return corresponding data frame
      } else {
        return(scan.data[[1]])
      }
-   })
-   
-   # Add any desired modifications to amplog data here
-   current_amp_data <- reactive({
-     return(amp.data)
    })
 
    current_average_data <- reactive({
@@ -156,7 +151,7 @@ shinyServer(function(input, output, session) {
      curr.scan.state <<- current_scan_data()
      print("data is being changed to match given smoothing span")
      if (input$customSmooth > 0.01) {
-       loess.graph.data <- applyLoessSmooth(curr.scan.state, input$customSmooth)
+       loess.graph.data <- applyLoessSmooth(curr.scan.state, as.numeric(input$customSmooth))
        curr.scan.state <<- loess.graph.data
      }
    })
@@ -164,13 +159,14 @@ shinyServer(function(input, output, session) {
    
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
-
+   # Add any desired modifications to amplog data here
+   current_amp_data <- reactive({
+     return(amp.data)
+   })
    
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
    
-
-    
    output$scanPlot <- renderPlot({
      curr.scan.state <<- current_scan_data()
      if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
@@ -178,7 +174,11 @@ shinyServer(function(input, output, session) {
          geom_line(aes(color="scan 1",y=curr.scan.state[[1]])) + 
          geom_line(aes(color="scan 2",y=curr.scan.state[[2]])) + 
          geom_line(aes(color="scan 3",y=curr.scan.state[[3]])) +
-         geom_line(aes(color="scan 4",y=curr.scan.state[[4]]))
+         geom_line(aes(color="scan 4",y=curr.scan.state[[4]])) + 
+         xlab("Diameters (nm)") +
+         ylab("Concentration (dN#/cm^2)") +
+         ggtitle(paste0(input$sampleSelect)) + 
+            theme(plot.title = element_text(hjust = 0.5))
        return(scan.plot)
      } else {
        return(NULL)

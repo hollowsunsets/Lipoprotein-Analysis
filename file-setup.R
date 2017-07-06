@@ -54,16 +54,13 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   #     sample.diameters   5.97    5.97   5.97   5.98   5.98
   for (i in 1:length(scan.graph.data)) {
     sample.data <- data.frame(      # NOTE: loess rounds down the rows in the given data
-      scan1 = predict(loess(filtered.scans[,scan.index + 1] ~ `Diameter..1`, filtered.scans, span = 0.05)), 
-      scan2 = predict(loess(filtered.scans[,scan.index + 2] ~ `Diameter..1`, filtered.scans, span = 0.05)),
-      scan3 = predict(loess(filtered.scans[,scan.index + 3] ~ `Diameter..1`, filtered.scans, span = 0.05)),
-      scan4 = predict(loess(filtered.scans[,scan.index + 4] ~ `Diameter..1`, filtered.scans, span = 0.05))
+      scan1 = filtered.scans[,scan.index + 1], 
+      scan2 = filtered.scans[,scan.index + 2],
+      scan3 = filtered.scans[,scan.index + 3],
+      scan4 = filtered.scans[,scan.index + 4]
     )
-    # Retrieves the altered row count so diameters can be added successfully (restriction of R dataframes)
-    sample.rows <- length(sample.data$scan1) 
-    # Adds the truncated diameters to the sample data frame
-    sample.data <- sample.data %>% mutate("sample.diameters" = filtered.scans$`Diameter..1`[1:sample.rows]) 
     # Adds sample dataframe to the vector that will contain all sample data frames
+    sample.data <- sample.data %>% mutate("sample.diameters" = filtered.scans$`Diameter..1`)
     scan.graph.data[[i]] <- sample.data 
     # Updates index so the next set of scans can be retrieved
     scan.index <- scan.index + 4  

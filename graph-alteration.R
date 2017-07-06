@@ -4,7 +4,10 @@ library(dplyr)
 # ----------------- Global Variables ---------------------------
 # Tracks the scans that have been dropped from the dataset
 scansDropped <- c(0)
-
+# new.scan.data <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
+# old.scan.data <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))
+# new.amp.data <- ampGraphData(read.xlsx("data\\170522_new_data_format_for_JC_amplog.xlsx", sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
+# old.amp.data <- ampGraphData(read.xlsx("data\\ampdDataset2.xlsx", sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
 
 # -------------------- Functions -------------------------------
 
@@ -55,15 +58,14 @@ calcSSE <- function(data.set, y.axis){
   return(sse)
 }
 
-loessFilter <- function(x, smooth.span) {
-  model <- loess(x ~ curr.scan.state$sample.diameters, curr.scan.state, span = smooth.span)
-  predict(model)
-}
 
 applyLoessSmooth <- function(curr.scan.state, smoothing.span) {
-  loess.graph.data <- curr.scan.state[1:4]
-  loess.graph.data <- as.data.frame(lapply(loess.graph.data, loess.filter, 
-                                           smooth.span = as.numeric(smoothing.span)))
+  loess.graph.data <- data.frame(
+    scan1 = predict(loess(curr.scan.state[,1] ~  curr.scan.state$sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan2 = predict(loess(curr.scan.state[,2] ~  curr.scan.state$sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan3 = predict(loess(curr.scan.state[,3] ~  curr.scan.state$sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan4 = predict(loess(curr.scan.state[,4] ~  curr.scan.state$sample.diameters, curr.scan.state, span = smoothing.span))
+  )
   sample.rows <- length(loess.graph.data$scan1)
-  loess.graph.data %>% mutate("sample.diameters" = curr.scan.state$sample.diameters[1:sample.rows]) 
+  loess.graph.data <- loess.graph.data %>% mutate("sample.diameters" = curr.scan.state$sample.diameters[1:sample.rows]) 
 }

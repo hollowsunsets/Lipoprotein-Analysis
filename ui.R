@@ -23,10 +23,6 @@ shinyUI(fluidPage(
                             "text/comma-separated-values,text/plain",
                             ".csv",".xlsx")),
       useShinyjs(),  
-      actionButton("test", "Test Me"),
-      hidden(
-        p(id = "element", "Shiny JS is actually working bro")
-      ),
       hidden(
         div(id = "scan-interactions", 
             h3("Scan Graph Interactions"),
