@@ -15,6 +15,7 @@ source("graph-alteration.R")
 shinyServer(function(input, output, session) {
   # ----------------------------------------------- Global Variables --------------------------------------------------#
   scan.data <- NULL
+  scan.timestamps <- NULL
   amp.data <- NULL
   curr.scan.state <- NULL 
   curr.amp.state <- NULL
@@ -37,12 +38,14 @@ shinyServer(function(input, output, session) {
      if (is.null(infile)) {
        return(NULL)
      }
+     raw.file <- read.csv(infile$datapath, stringsAsFactors = FALSE, na.strings = c("", NA)) 
+     # Note: na.strings = c("", NA) is necessary to read timestamps in correctly
      if (!is.null(input$sparklinkData)) {
-       
-       scan.data <<- scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE), sparklink.data()) # if the sparklink file was provided,
-                                                                                                          # set labels to sparklink labels
+       scan.data <<- scanGraphData(raw.file, sparklink.data()) # if the sparklink file was provided,
+       scan.timestamps <<- scanTimeStamps(raw.file, sparklink.data())
      } else {
-       scan.data <<- scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE)) # else, set to default of "sample 1, sample 2, ..., etc"
+       scan.data <<- scanGraphData(raw.file) # else, set to default of "sample 1, sample 2, ..., etc"
+       scan.timestamps <<- scanTimeStamps(raw.file, sparklink.data())
      }
      return(scan.data)
    })

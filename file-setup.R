@@ -6,6 +6,7 @@ library(lubridate) # dependency for manipulating timestamps
 
 # --------------------- Test Variables --------------------------
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+ raw.scans.file <- read.csv("data\\AIMDataset2.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
 
 # ---------------------- Functions -------------------------------
@@ -85,7 +86,7 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
 
 # Returns a dataframe containing the corresponding starting and end time stamps 
 # for each sample (the time during which each sample was run) from the given raw scans file. 
-scanStartTimes <- function(raw.scans.file, raw.sparklink.file = NULL) {
+scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   
   # Removes all rows before and after the time stamps and the sample labels. 
   timestamp.start.index <- grep("^Sample #", raw.scans.file[,1])
@@ -104,19 +105,23 @@ scanStartTimes <- function(raw.scans.file, raw.sparklink.file = NULL) {
   # Remove the first column of the dataframe containing labels
   timestamp.df <- timestamp.df[,-1]
   
-  # Removes the first two scans of the six scans from the dataset (preserving label of date and start time)
+  # Removes the first two scans of the six scans from the dataset
   timestamp.df <- nthDelete(timestamp.df, 6, 1)
   timestamp.df <- nthDelete(timestamp.df, 5, 1)
-  
+
   # Creates a dataframe from the start time and date for each scan
-  final.timestamps <- data.frame(start.time = as.POSIXct(paste(timestamp.df[1,], timestamp.df[2,]), 
-                                                         format="%d/%m/%Y %H:%M:%S", value = NA))
+  final.timestamps <- data.frame(start.time = parse_date_time(paste(timestamp.df[1,], 
+                                                                    timestamp.df[2,]),
+                                                              c("%d/%m/%Y %H:%M:%S",
+                                                                "%m/%d/%y %H:%M:%S")))
   
   # Creates columns of a rounded down start time and a rounded up end time to represent a flexible
   # starting and end time to be graphed for each sample
   number.of.samples <- floor((nrow(final.timestamps)/4)) * 4 
   sample.times <- data.frame(start.time = final.timestamps[(seq(1, to=number.of.samples, by=4)),],
                              end.time = final.timestamps[(seq(4, to=number.of.samples, by=4)),])
+  sample.times$start.time <- floor_date(sample.times$start.time, "minute")
+  sample.times$end.time <- ceiling_date(sample.times$end.time, "minute")
   
   
   # Data is labeled the same as the scan data itself to facilitate ease of access 
@@ -131,6 +136,7 @@ scanStartTimes <- function(raw.scans.file, raw.sparklink.file = NULL) {
 }
 
 scan.graph.data <- scanGraphData(raw.scans.file)
+scan.timestamps <- scanTimeStamps(raw.scans.file)
 
 # Function for setting the column names of the graph data so the 
 # data processing doesn't have to be run through again. 
