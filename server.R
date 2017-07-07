@@ -40,6 +40,7 @@ shinyServer(function(input, output, session) {
      if (!is.null(input$sparklinkData)) {
        
        scan.data <<- scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE), sparklink.data()) # if the sparklink file was provided,
+                                                                                                          # set labels to sparklink labels
      } else {
        scan.data <<- scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE)) # else, set to default of "sample 1, sample 2, ..., etc"
      }
@@ -55,6 +56,8 @@ shinyServer(function(input, output, session) {
    })
      
    # ----------------------------------------- Scan Interaction Functions ---------------------------------------- #
+   # NOTE: Ordering of function definitions matters - Shiny renders as it reads in, and the various components are defined
+   # such that dependencies will exist before they are needed (nothing will be called when it doesn't exist yet)
   
    # Defines behavior for file control button, which hides and shows the 
    # file controls when clicked.  
@@ -80,14 +83,14 @@ shinyServer(function(input, output, session) {
    })
    
    current_scan_data <- reactive({
-     print("current state for scan graph is constructed")
      if (any(input$sampleSelect %in% names(scan.data))) {
-       # return the dataframe that corresponds with input$sampleSelect
+       # Return the dataframe that corresponds with input$sampleSelect 
+       # (i.e, graph.data$`std1`, which is the scan data for the std1 sample)
        if (input$customSmooth > 0.01) {
          return(applyLoessSmooth(scan.data[[input$sampleSelect]], as.numeric(input$customSmooth))) 
        } else {
          return(scan.data[[input$sampleSelect]])
-       }# should be something like graph.data$`std 1` which will return corresponding data frame
+       }
      } else {
        return(scan.data[[1]])
      }
@@ -102,10 +105,8 @@ shinyServer(function(input, output, session) {
    
    
    observeEvent(input$scansData, {
-     print("scan interactions are rendering")
      scan.data <<- scans.data()
      toggle("scan-interactions")
-     print("scan plot is rendering")
      toggle("scanPlot")
      toggle("scan-message")
    }, once = TRUE)
@@ -162,7 +163,6 @@ shinyServer(function(input, output, session) {
   
    observeEvent(input$customSmooth, {
      curr.scan.state <<- current_scan_data()
-     print("data is being changed to match given smoothing span")
      if (input$customSmooth > 0.01) {
        loess.graph.data <- applyLoessSmooth(curr.scan.state, as.numeric(input$customSmooth))
        curr.scan.state <<- loess.graph.data
@@ -180,6 +180,7 @@ shinyServer(function(input, output, session) {
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
    
+   # To-Do: Figure out how to make it so this can graph a dynamic number of scans, rather than being hard-coded for 4 scans
    output$scanPlot <- renderPlot({
      curr.scan.state <<- current_scan_data()
      if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
@@ -191,7 +192,7 @@ shinyServer(function(input, output, session) {
          xlab("Diameters (nm)") +
          ylab("Concentration (dN#/cm^2)") +
          ggtitle(paste0(input$sampleSelect)) + 
-            theme(plot.title = element_text(hjust = 0.5))
+            theme(plot.title = element_text(hjust = 0.5)) # Centers graph title
        return(scan.plot)
      } else {
        return(NULL)

@@ -1,11 +1,12 @@
 # --------------------- Dependencies ---------------------------
 
-library(dplyr) # dependency for wrangling data 
+library(dplyr) # dependency for general data wrangling
 library(xlsx) # dependency for reading in .xlsx files
+library(lubridate) # dependency for manipulating timestamps
 
 # --------------------- Test Variables --------------------------
-raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
-# Note: na.strings = c("", "NA") is necessary for time labels to be retrieved properly
+# raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+# Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
 
 # ---------------------- Functions -------------------------------
 
@@ -82,9 +83,9 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   return(scan.graph.data)                                      
 }
 
-# Returns a dataframe containing the corresponding time stamps for each sample 
-# from the given raw scans file. 
-scanGraphTimestamps <- function(raw.scans.file) {
+# Returns a dataframe containing the corresponding starting and end time stamps 
+# for each sample (the time during which each sample was run) from the given raw scans file. 
+scanStartTimes <- function(raw.scans.file, raw.sparklink.file = NULL) {
   
   # Removes all rows before and after the time stamps and the sample labels. 
   timestamp.start.index <- grep("^Sample #", raw.scans.file[,1])
@@ -97,16 +98,44 @@ scanGraphTimestamps <- function(raw.scans.file) {
   timestamp.df <- timestamp.df[-1,]
 
   # Selects only the relevant data (in this context only the columns that have information in them)
+  # All blank columns were set to NA when read in, and are now deleted.
   timestamp.df <- timestamp.df[colSums(is.na(timestamp.df)) != nrow(timestamp.df)]
   
-  # Removes the first two scans of the six scans from the dataset (preserving label of date and start time)
-  timestamp.df <- nthDelete(timestamp.df, 6, 2)
-  timestamp.df <- nthDelete(timestamp.df, 5, 2)
+  # Remove the first column of the dataframe containing labels
+  timestamp.df <- timestamp.df[,-1]
   
-  return(timestamp.df)
+  # Removes the first two scans of the six scans from the dataset (preserving label of date and start time)
+  timestamp.df <- nthDelete(timestamp.df, 6, 1)
+  timestamp.df <- nthDelete(timestamp.df, 5, 1)
+  
+  # Creates a dataframe from the start time and date for each scan
+  final.timestamps <- data.frame(start.time = as.POSIXct(paste(timestamp.df[1,], timestamp.df[2,]), 
+                                                         format="%d/%m/%Y %H:%M:%S", value = NA))
+  
+  # Creates columns of a rounded down start time and a rounded up end time to represent a flexible
+  # starting and end time to be graphed for each sample
+  
+  ## All of this stuff below is because POSIXct objects aren't well supported in some of the 
+  ## major data structures in R and the uneven number of time stamps for each sample causes complications
+  number.of.samples <- floor((nrow(final.timestamps)/4)) * 4
+  sample.times <- as.data.frame(matrix(nrow = 2, ncol = number.of.samples/4))
+  sample.times[1,] <- final.timestamps[(seq(1, to=number.of.samples, by=4)),]
+  sample.times[2,] <- final.timestamps[(seq(4, to=number.of.samples, by=4)),]
+  sample.times[,3] <- as.POSIXct(sample.times[,3], origin = '1970-01-01')
+
+  
+  # Data is labeled the same as the scan data itself to facilitate ease of access 
+  if (!(is.null(raw.sparklink.file))) {
+    sample.names <- raw.sparklink.file %>% select(Sample.Name)
+    names(sample.times) <- sample.names[,1]
+  } else {
+    sample.times <- c(paste0("sample ", 1:length(scan.graph.data)))
+  }
+  
+  return(final.timestamps)
 }
 
-
+scan.graph.data <- scanGraphData(raw.scans.file)
 
 # Function for setting the column names of the graph data so the 
 # data processing doesn't have to be run through again. 
@@ -114,9 +143,6 @@ scanGraphTimestamps <- function(raw.scans.file) {
 setGraphLabels <- function(graph.labels, graph.data) {
   names(graph.data) <- graph.labels[,1] # Is this even used? It's just one line and it's already run in the file processing itself
 }
-
-
-
 
 # Returns a data frame to be graphed from the given amplog file.
 ampGraphData <- function(raw.amplog.file) {
@@ -129,4 +155,3 @@ ampGraphData <- function(raw.amplog.file) {
 nthDelete <- function(data.frame, n, i) {
   data.frame[,-(seq(i, to=ncol(data.frame), by=n))]
 }
-
