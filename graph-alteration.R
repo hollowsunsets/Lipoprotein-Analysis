@@ -3,7 +3,7 @@ library(dplyr)
 
 # ----------------- Global Variables ---------------------------
 # Tracks the scans that have been dropped from the dataset
-scansDropped <- c(0)
+scansDropped <- c("None")
 # new.scan.data <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
 # old.scan.data <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))
 # new.amp.data <- ampGraphData(read.xlsx("data\\170522_new_data_format_for_JC_amplog.xlsx", sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
@@ -65,14 +65,24 @@ calcSSE <- function(data.set, y.axis){
   return(sse)
 }
 
-
+curr.scan.state <- graph.data$`sample 1`
+curr.scan.state <- dropScan(curr.scan.state, "scan1")
+smoothing.span <- 0.5
 applyLoessSmooth <- function(curr.scan.state, smoothing.span) {
-  loess.graph.data <- data.frame(
-    scan1 = predict(loess(curr.scan.state[,1] ~  curr.scan.state$sample.diameters, curr.scan.state, span = smoothing.span)),
-    scan2 = predict(loess(curr.scan.state[,2] ~  curr.scan.state$sample.diameters, curr.scan.state, span = smoothing.span)),
-    scan3 = predict(loess(curr.scan.state[,3] ~  curr.scan.state$sample.diameters, curr.scan.state, span = smoothing.span)),
-    scan4 = predict(loess(curr.scan.state[,4] ~  curr.scan.state$sample.diameters, curr.scan.state, span = smoothing.span))
-  )
-  sample.rows <- length(loess.graph.data$scan1)
+  ## response
+  vars <- colnames(curr.scan.state)
+  ## covariate
+  id <- 1:nrow(curr.scan.state)
+  ## define a loess filter function (fitting loess regression line)
+  loess.filter <- function (x, span) loess(formula = paste(x, "id", sep = "~"),
+                                           data = curr.scan.state,
+                                           degree = 1,
+                                           span = span)$fitted 
+  ## apply filter column-by-column
+  loess.graph.data <- as.data.frame(lapply(vars, loess.filter, span = smoothing.span),
+                           col.names = colnames(curr.scan.state))
+  sample.rows <- length(loess.graph.data[,1])
   loess.graph.data <- loess.graph.data %>% mutate("sample.diameters" = curr.scan.state$sample.diameters[1:sample.rows]) 
 }
+
+test.loess <- applyLoessSmooth(curr.scan.state, 0.5)

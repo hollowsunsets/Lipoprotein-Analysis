@@ -23,7 +23,8 @@ shinyUI(fluidPage(
                    accept = c("text/csv",
                               "text/comma-separated-values,text/plain",
                               ".csv",".xlsx"))),
-      actionButton("toggleFileControls", "Hide File Controls"),
+      p("Click the button below to hide the file controls or make them reappear."),
+      actionButton("toggleFileControls", "Toggle File Controls"),
       useShinyjs(),  
       hidden(
         div(id = "scan-interactions", 

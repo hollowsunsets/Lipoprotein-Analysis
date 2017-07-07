@@ -4,7 +4,7 @@ library(shinyjs)
 library(dplyr)
 library(xlsx)
 library(ggplot2)
-
+library(reshape2)
 
 options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
@@ -17,7 +17,8 @@ shinyServer(function(input, output, session) {
   scan.data <- NULL
   scan.timestamps <- NULL
   amp.data <- NULL
-  curr.scan.state <- NULL 
+  curr.scan.sample.state <- NULL 
+  curr.scan.graph.state <- NULL
   curr.amp.state <- NULL
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
@@ -85,18 +86,31 @@ shinyServer(function(input, output, session) {
      }
    })
    
-   current_scan_data <- reactive({
+   # Should only update when the sample being visualized is changed.
+   current_sample_data <- reactive({
      if (any(input$sampleSelect %in% names(scan.data))) {
+       curr.scan.graph.date <<- scan.data[[input$sampleSelect]]
+       curr.scan.sample.state <<- scan.data[[input$sampleSelect]]
+     } else {
+       curr.scan.graph.date <<- scan.data[[1]]
+       curr.scan.sample.state <<- scan.data[[1]]
+     }
+   })
+   
+   current_scan_data <- reactive({
        # Return the dataframe that corresponds with input$sampleSelect 
        # (i.e, graph.data$`std1`, which is the scan data for the std1 sample)
        if (input$customSmooth > 0.01) {
-         return(applyLoessSmooth(scan.data[[input$sampleSelect]], as.numeric(input$customSmooth))) 
-       } else {
-         return(scan.data[[input$sampleSelect]])
+         curr.scan.graph.state <<- applyLoessSmooth(curr.scan.graph.state, as.numeric(input$customSmooth))
        }
-     } else {
-       return(scan.data[[1]])
-     }
+       print(input$scansToAdd)
+       if (input$scansToAdd != "None" && !is.null(input$scansToAdd)) {
+         curr.scan.graph.state <<- addBackScan(sample.data, input$scansToAdd, original.sample.data)
+       }
+       print(input$scansToRemove)
+       if (input$scansToRemove != "None"  && !is.null(input$scansToRemove)) {
+         curr.scan.graph.state <<- dropScan(sample.data, input$scansToRemove)
+       }
    })
 
    current_average_data <- reactive({
@@ -109,6 +123,7 @@ shinyServer(function(input, output, session) {
    
    observeEvent(input$scansData, {
      scan.data <<- scans.data()
+     curr.scan.state <<- current_scan_data()
      toggle("scan-interactions")
      toggle("scanPlot")
      toggle("scan-message")
@@ -132,30 +147,41 @@ shinyServer(function(input, output, session) {
    })
    
    output$removeScans <- renderUI({
-     curr.scan.state <<- current_scan_data()
-     scan.state <- select(curr.scan.state, starts_with("scan"))
+     curr.scan.graph.state <<- current_scan_data()
+     scan.names <- colnames(select(curr.scan.graph.state, starts_with("scan")))
+     scan.names[length(scan.names) + 1] <- "None"
      selectInput("scansToRemove", label = "Remove a Scan", 
-                 choices = colnames(scan.state))
+                 choices = scan.names, selected = "None")
    })
    
    output$addScans <- renderUI({
-     curr.scan.state <<- current_scan_data()
-     scan.state <- select(curr.scan.state, starts_with("scan"))
-     curr.scan.names <- colnames(scan.state)[-scansDropped]
-     if (length(curr.scan.names) == 0) {
-       curr.scan.names <- c("None")
-     }
+     curr.scan.graph.state <<- current_scan_data()
+     test <- scansDropped
      selectInput("scansToAdd", label = "Add a Scan",
-                 choices = curr.scan.names)
+                 choices = scansDropped, selected = "None")
    })
+   
+   # Updates the list of scans to choose from in the dropdown inputs for adding and removing scans.
+  # observe({
+   #   if (!is.null(input$scansData)) {
+    #    scan.names <- colnames(select(curr.scan.state, starts_with("scan")))
+     #   scan.names[length(scan.names) + 1] <- "None"
+      #  removed.names <- (scan.state)[-scansDropped]
+       # removed.names[length(removed.names) + 1] <- "None"
+      
+   #   updateSelectInput(session, "scansToRemove", label = "Remove a Scan", choices = scan.names, selected = "None")
+  #    updateSelectInput(session, "scansToAdd", label = "Add a Scan", choices = removed.names, selected = "None")
+    #  }
+  # })
+   
    
    output$smoothControl <- renderUI({
      tagList(
         p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
         p("i.e: 0.10 = 10% smoothing span"),
-        textInput("customSmooth", "Enter Smoothing Span", "0.05"),
-        p("Click to optimize the smoothing to minimize the SSE (sum of squared errors)."),
-        actionButton("optimizeSmooth", "Optimize Smooth")
+        textInput("customSmooth", "Enter Smoothing Span", "0.05")
+     #   p("Click to optimize the smoothing to minimize the SSE (sum of squared errors)."),
+      #  actionButton("optimizeSmooth", "Optimize Smooth")
      )
    })
    
@@ -165,7 +191,7 @@ shinyServer(function(input, output, session) {
 
   
    observeEvent(input$customSmooth, {
-     curr.scan.state <<- current_scan_data()
+     curr.scan.graph.state <<- current_scan_data()
      if (input$customSmooth > 0.01) {
        loess.graph.data <- applyLoessSmooth(curr.scan.state, as.numeric(input$customSmooth))
        curr.scan.state <<- loess.graph.data
@@ -183,15 +209,12 @@ shinyServer(function(input, output, session) {
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
    
-   # To-Do: Figure out how to make it so this can graph a dynamic number of scans, rather than being hard-coded for 4 scans
    output$scanPlot <- renderPlot({
      curr.scan.state <<- current_scan_data()
      if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
-       scan.plot <- ggplot(data=curr.scan.state, aes(sample.diameters)) + 
-         geom_line(aes(color="scan 1",y=curr.scan.state[[1]])) + 
-         geom_line(aes(color="scan 2",y=curr.scan.state[[2]])) + 
-         geom_line(aes(color="scan 3",y=curr.scan.state[[3]])) +
-         geom_line(aes(color="scan 4",y=curr.scan.state[[4]])) + 
+      scan.plot.data <- melt(curr.scan.state, id.vars = "sample.diameters", variable.name = 'series') 
+      scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
+         geom_line(aes(colour = series)) +
          xlab("Diameters (nm)") +
          ylab("Concentration (dN#/cm^2)") +
          ggtitle(paste0(input$sampleSelect)) + 

@@ -14,7 +14,6 @@ library(lubridate) # dependency for manipulating timestamps
 
 # With the given scan files, returns a data frame that has 
 # contains the relevant scan data, prepared to be graphed.
-# This takes around 9 seconds to run, mostly because of the polynomial regression calculations :(
 scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   # Remove all rows before the rows that contain diameter and count data
   diameter.row.index <- grep("^Raw", raw.scans.file[,1])
@@ -129,7 +128,7 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
     sample.names <- raw.sparklink.file %>% select(Sample.Name)
     sample.times$sample.name <- sample.names[,1]
   } else {
-    sample.times$sample.name <- c(paste0("sample ", 1:length(scan.graph.data)))
+    sample.times$sample.name <- c(paste0("sample ", 1:length(sample.times)))
   }
   
   return(sample.times)
