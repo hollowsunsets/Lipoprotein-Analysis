@@ -3,6 +3,10 @@
 library(dplyr) # dependency for wrangling data 
 library(xlsx) # dependency for reading in .xlsx files
 
+# --------------------- Test Variables --------------------------
+raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+# Note: na.strings = c("", "NA") is necessary for time labels to be retrieved properly
+
 # ---------------------- Functions -------------------------------
 
 
@@ -14,7 +18,7 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   diameter.row.index <- grep("^Raw", raw.scans.file[,1])
   raw.scans.df <- raw.scans.file[diameter.row.index:nrow(raw.scans.file),]
 
-  # Change column names to the first row (which contains names of relevant data)
+  # Change column names to the first row (which contains identifiers of samples)
   colnames(raw.scans.df) <- raw.scans.df[1,]
   raw.scans.df <- raw.scans.df[-1,]
   
@@ -44,8 +48,8 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   # Index is pointer for traversing through filtered data 
   scan.index <- 1
   
-  # Split the filtered scans dataframe into smaller dataframes - each corresponding to a sample, with corresponding scan data and diameters
-  # Local polynomical regression is applied to predict data
+  # Split the filtered scans dataframe into smaller dataframes - each corresponding to a sample, 
+  # with corresponding scan data and diameters
   # i.e: sample1 --- example of dataframes that populate the vector
   #     scan1             -0.466  -0.431 -0.431 -0.419 -0.419 ...
   #     scan2             -0.491  -0.491 -0.491 -0.479 -0.479
@@ -53,7 +57,7 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   #     scan4             -0.335  -0.335 -0.335 -0.324 -0.324
   #     sample.diameters   5.97    5.97   5.97   5.98   5.98
   for (i in 1:length(scan.graph.data)) {
-    sample.data <- data.frame(      # NOTE: loess rounds down the rows in the given data
+    sample.data <- data.frame(    
       scan1 = filtered.scans[,scan.index + 1], 
       scan2 = filtered.scans[,scan.index + 2],
       scan3 = filtered.scans[,scan.index + 3],
@@ -78,12 +82,41 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   return(scan.graph.data)                                      
 }
 
+# Returns a dataframe containing the corresponding time stamps for each sample 
+# from the given raw scans file. 
+scanGraphTimestamps <- function(raw.scans.file) {
+  
+  # Removes all rows before and after the time stamps and the sample labels. 
+  timestamp.start.index <- grep("^Sample #", raw.scans.file[,1])
+  timestamp.end.index <- grep("^Start", raw.scans.file[,1])
+  timestamp.df <- raw.scans.file[timestamp.start.index:timestamp.end.index,]
+  
+  # Changes the column names of the time stamp dataframe to the first row, then
+  # deletes the first row.
+  colnames(timestamp.df) <- timestamp.df[1,]
+  timestamp.df <- timestamp.df[-1,]
+
+  # Selects only the relevant data (in this context only the columns that have information in them)
+  timestamp.df <- timestamp.df[colSums(is.na(timestamp.df)) != nrow(timestamp.df)]
+  
+  # Removes the first two scans of the six scans from the dataset (preserving label of date and start time)
+  timestamp.df <- nthDelete(timestamp.df, 6, 2)
+  timestamp.df <- nthDelete(timestamp.df, 5, 2)
+  
+  return(timestamp.df)
+}
+
+
+
 # Function for setting the column names of the graph data so the 
 # data processing doesn't have to be run through again. 
 # Assumed format is Sparklink labels format.
 setGraphLabels <- function(graph.labels, graph.data) {
-  names(graph.data) <- graph.labels[,1]
+  names(graph.data) <- graph.labels[,1] # Is this even used? It's just one line and it's already run in the file processing itself
 }
+
+
+
 
 # Returns a data frame to be graphed from the given amplog file.
 ampGraphData <- function(raw.amplog.file) {

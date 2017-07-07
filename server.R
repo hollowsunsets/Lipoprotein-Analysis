@@ -1,3 +1,4 @@
+ # -------------------------------------------------- Dependencies -------------------------------------------------- #
 library(shiny)
 library(shinyjs)
 library(dplyr)
@@ -12,6 +13,7 @@ source("graph-alteration.R")
 # source("graph-analysis.R")
 
 shinyServer(function(input, output, session) {
+  # ----------------------------------------------- Global Variables --------------------------------------------------#
   scan.data <- NULL
   amp.data <- NULL
   curr.scan.state <- NULL 
@@ -29,14 +31,14 @@ shinyServer(function(input, output, session) {
    })
    
    # Retrieves and reads in and processes scans dataset.
-   # To-Do: Add check to ensure it is an accepted format.
+   # To-Do: Add check to ensure it is an accepted format. 
    scans.data <- reactive({
-     print("scans.data has been read in")
      infile <- input$scansData
      if (is.null(infile)) {
        return(NULL)
      }
      if (!is.null(input$sparklinkData)) {
+       
        scan.data <<- scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE), sparklink.data()) # if the sparklink file was provided,
      } else {
        scan.data <<- scanGraphData(read.csv(infile$datapath, stringsAsFactors = FALSE)) # else, set to default of "sample 1, sample 2, ..., etc"
@@ -53,11 +55,22 @@ shinyServer(function(input, output, session) {
    })
      
    # ----------------------------------------- Scan Interaction Functions ---------------------------------------- #
+  
+   # Defines behavior for file control button, which hides and shows the 
+   # file controls when clicked.  
+    observeEvent(input$toggleFileControls, {
+     toggle("file-selection-controls")
+   })
+   
+    # Defines behavior for the sample selection dropdown menu, which 
+    # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
      selectInput("sampleSelect", label = "Select a Sample",
                  choices = names(scan.data), selected = names(scan.data[1]))
    })
    
+   # Updates the names stored in the sample selection dropdown menu
+   # if a Sparklink file has been passed in. 
    observe({
      if (!is.null(input$sparklinkData)) {
        sparklink.data <- sparklink.data()
