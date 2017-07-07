@@ -114,25 +114,20 @@ scanStartTimes <- function(raw.scans.file, raw.sparklink.file = NULL) {
   
   # Creates columns of a rounded down start time and a rounded up end time to represent a flexible
   # starting and end time to be graphed for each sample
+  number.of.samples <- floor((nrow(final.timestamps)/4)) * 4 
+  sample.times <- data.frame(start.time = final.timestamps[(seq(1, to=number.of.samples, by=4)),],
+                             end.time = final.timestamps[(seq(4, to=number.of.samples, by=4)),])
   
-  ## All of this stuff below is because POSIXct objects aren't well supported in some of the 
-  ## major data structures in R and the uneven number of time stamps for each sample causes complications
-  number.of.samples <- floor((nrow(final.timestamps)/4)) * 4
-  sample.times <- as.data.frame(matrix(nrow = 2, ncol = number.of.samples/4))
-  sample.times[1,] <- final.timestamps[(seq(1, to=number.of.samples, by=4)),]
-  sample.times[2,] <- final.timestamps[(seq(4, to=number.of.samples, by=4)),]
-  sample.times[,3] <- as.POSIXct(sample.times[,3], origin = '1970-01-01')
-
   
   # Data is labeled the same as the scan data itself to facilitate ease of access 
   if (!(is.null(raw.sparklink.file))) {
     sample.names <- raw.sparklink.file %>% select(Sample.Name)
-    names(sample.times) <- sample.names[,1]
+    sample.times$sample.name <- sample.names[,1]
   } else {
-    sample.times <- c(paste0("sample ", 1:length(scan.graph.data)))
+    sample.times$sample.name <- c(paste0("sample ", 1:length(scan.graph.data)))
   }
   
-  return(final.timestamps)
+  return(sample.times)
 }
 
 scan.graph.data <- scanGraphData(raw.scans.file)
