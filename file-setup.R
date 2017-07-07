@@ -135,8 +135,8 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   return(sample.times)
 }
 
-scan.graph.data <- scanGraphData(raw.scans.file)
-scan.timestamps <- scanTimeStamps(raw.scans.file)
+# scan.graph.data <- scanGraphData(raw.scans.file)
+# scan.timestamps <- scanTimeStamps(raw.scans.file)
 
 # Function for setting the column names of the graph data so the 
 # data processing doesn't have to be run through again. 
