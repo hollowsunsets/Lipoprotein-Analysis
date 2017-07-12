@@ -5,8 +5,8 @@ library(xlsx) # dependency for reading in .xlsx files
 library(lubridate) # dependency for manipulating timestamps
 
 # --------------------- Test Variables --------------------------
-# raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
- raw.scans.file <- read.csv("data\\AIMDataset2.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+ raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+# raw.scans.file <- read.csv("data\\AIMDataset2.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
 
 # ---------------------- Functions -------------------------------
@@ -128,11 +128,12 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
     sample.names <- raw.sparklink.file %>% select(Sample.Name)
     sample.times$sample.name <- sample.names[,1]
   } else {
-    sample.times$sample.name <- c(paste0("sample ", 1:length(sample.times)))
+    sample.times$sample.name <- c(paste0("sample ", 1:(nrow(sample.times))))
   }
   
   return(sample.times)
 }
+
 
 # scan.graph.data <- scanGraphData(raw.scans.file)
 # scan.timestamps <- scanTimeStamps(raw.scans.file)

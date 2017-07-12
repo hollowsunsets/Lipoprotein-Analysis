@@ -14,12 +14,8 @@ source("graph-alteration.R")
 
 shinyServer(function(input, output, session) {
   # ----------------------------------------------- Global Variables --------------------------------------------------#
-  scan.data <- NULL
   scan.timestamps <- NULL
-  amp.data <- NULL
-  curr.scan.sample.state <- NULL 
-  curr.scan.graph.state <- NULL
-  curr.amp.state <- NULL
+
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
@@ -35,18 +31,28 @@ shinyServer(function(input, output, session) {
    # Retrieves and reads in and processes scans dataset.
    # To-Do: Add check to ensure it is an accepted format. 
    scans.data <- reactive({
+     print("General scan data is recognized. ")
+     scan.data <- NULL
      infile <- input$scansData
-     if (is.null(infile)) {
-       return(NULL)
-     }
-     raw.file <- read.csv(infile$datapath, stringsAsFactors = FALSE, na.strings = c("", NA)) 
-     # Note: na.strings = c("", NA) is necessary to read timestamps in correctly
-     if (!is.null(input$sparklinkData)) {
-       scan.data <<- scanGraphData(raw.file, sparklink.data()) # if the sparklink file was provided,
-       scan.timestamps <<- scanTimeStamps(raw.file, sparklink.data())
-     } else {
-       scan.data <<- scanGraphData(raw.file) # else, set to default of "sample 1, sample 2, ..., etc"
-       scan.timestamps <<- scanTimeStamps(raw.file, sparklink.data())
+     print(infile)
+     print(input$scansData)
+     if (!is.null(infile)) {
+       print(!is.null(infile))
+       print("Raw file is now being read in, now that the file path has a file to process.")
+       raw.file <- read.csv(infile$datapath, stringsAsFactors = FALSE, na.strings = c("", NA)) 
+       print(raw.file)
+       # Note: na.strings = c("", NA) is necessary to read timestamps in correctly
+       if (!is.null(input$sparklinkData)) {
+         print("Sparklink file was provided. Labels will be appended to the returned file.")
+         scan.data <- scanGraphData(raw.file, sparklink.data()) # if the sparklink file was provided,
+         print(scan.data)
+         scan.timestamps <<- scanTimeStamps(raw.file, sparklink.data())
+       } else {
+         print("No sparklink file provided. Default labels will be generated accordingly.")
+         scan.data <- scanGraphData(raw.file) # else, set to default of "sample 1, sample 2, ..., etc"
+         print(scan.data)
+         scan.timestamps <<- scanTimeStamps(raw.file)
+       }
      }
      return(scan.data)
    })
@@ -56,7 +62,7 @@ shinyServer(function(input, output, session) {
      if (is.null(infile)) {
        return(NULL)
      }
-     amp.data <<- ampGraphData(read.xlsx(infile$datapath, sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
+     return(ampGraphData(read.xlsx(infile$datapath, sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE)))
    })
      
    # ----------------------------------------- Scan Interaction Functions ---------------------------------------- #
@@ -72,8 +78,9 @@ shinyServer(function(input, output, session) {
     # Defines behavior for the sample selection dropdown menu, which 
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
+     print("Sample control is being rendered.")
      selectInput("sampleSelect", label = "Select a Sample",
-                 choices = names(scan.data), selected = names(scan.data[1]))
+                 choices = names(scans.data()), selected = names(scans.data())[1])
    })
    
    # Updates the names stored in the sample selection dropdown menu
@@ -88,29 +95,49 @@ shinyServer(function(input, output, session) {
    
    # Should only update when the sample being visualized is changed.
    current_sample_data <- reactive({
+     print("The desired sample from the overall scans dataset is being selected.")
+     current.sample.set <- scans.data()
+     print("Let's hope that current.sample.set is not null.")
+     print(current.sample.set)
      if (any(input$sampleSelect %in% names(scan.data))) {
-       curr.scan.graph.date <<- scan.data[[input$sampleSelect]]
-       curr.scan.sample.state <<- scan.data[[input$sampleSelect]]
+       print("The corresponding sample from the selected sample (or the default) will be chosen.")
+       return(current.sample.set[[input$sampleSelect]])
      } else {
-       curr.scan.graph.date <<- scan.data[[1]]
-       curr.scan.sample.state <<- scan.data[[1]]
+       print("Default dataset (the first in the set) is being returned for some reason. Names do not match, you better check why.")
+       print("Here's the non-matching inputs:")
+       print(input$sampleSelect)
+       print(names(scan.data))
+       print(current.sample.set[[1]])
+       return(current.sample.set[[1]])
      }
    })
    
    current_scan_data <- reactive({
+     selected.sample.data <- current_sample_data()
+     altered.sample.data <- selected.sample.data
+     print("Current scan data is being reloaded")
        # Return the dataframe that corresponds with input$sampleSelect 
        # (i.e, graph.data$`std1`, which is the scan data for the std1 sample)
-       if (input$customSmooth > 0.01) {
-         curr.scan.graph.state <<- applyLoessSmooth(curr.scan.graph.state, as.numeric(input$customSmooth))
+     print(selected.sample.data)
+     print("Selected sample data better be null right now if nothing else is happening.")
+       if (!(is.null(selected.sample.data))) {
+         print("Selected sample data is not null. Hopefully this is reactive and updates.")
+         print("Right now, curr.scan.graph.state is not null if this if statement is correct.")
+         print(input$customSmooth)
+         if (!(is.null(input$customSmooth)) && input$customSmooth > 0.01) {
+            altered.sample.data <- applyLoessSmooth(altered.sample.data, as.numeric(input$customSmooth))
+         }
+         
+         print(input$scansToAdd)
+         if (input$scansToAdd != "None" && !is.null(input$scansToAdd)) {
+            altered.sample.data <- addBackScan(altered.sample.data, input$scansToAdd, selected.sample.data)
+         }
+         print(input$scansToRemove)
+         if (input$scansToRemove != "None"  && !is.null(input$scansToRemove)) {
+            altered.sample.data <<- dropScan(altered.sample.data, input$scansToRemove)
+         }
        }
-       print(input$scansToAdd)
-       if (input$scansToAdd != "None" && !is.null(input$scansToAdd)) {
-         curr.scan.graph.state <<- addBackScan(sample.data, input$scansToAdd, original.sample.data)
-       }
-       print(input$scansToRemove)
-       if (input$scansToRemove != "None"  && !is.null(input$scansToRemove)) {
-         curr.scan.graph.state <<- dropScan(sample.data, input$scansToRemove)
-       }
+     return(altered.sample.data)
    })
 
    current_average_data <- reactive({
@@ -120,17 +147,14 @@ shinyServer(function(input, output, session) {
      averageScans(curr.scan.state)
    })
    
-   
    observeEvent(input$scansData, {
-     scan.data <<- scans.data()
-     curr.scan.state <<- current_scan_data()
      toggle("scan-interactions")
      toggle("scanPlot")
      toggle("scan-message")
    }, once = TRUE)
    
+   
    observeEvent(input$amplogData, {
-     amp.data <<- amplog.data()
      toggle("amplog-interactions")
      toggle("ampPlot")
      toggle("amp-message")
@@ -147,32 +171,19 @@ shinyServer(function(input, output, session) {
    })
    
    output$removeScans <- renderUI({
-     curr.scan.graph.state <<- current_scan_data()
-     scan.names <- colnames(select(curr.scan.graph.state, starts_with("scan")))
-     scan.names[length(scan.names) + 1] <- "None"
-     selectInput("scansToRemove", label = "Remove a Scan", 
-                 choices = scan.names, selected = "None")
+     selected.sample.data <- current_sample_data()
+     if (!is.null(selected.sample.data)) {
+       scan.names <- colnames(select(selected.sample.data, starts_with("scan")))
+       scan.names[length(scan.names) + 1] <- "None"
+       selectInput("scansToRemove", label = "Remove a Scan", 
+                   choices = scan.names, selected = "None")
+     }
    })
    
    output$addScans <- renderUI({
-     curr.scan.graph.state <<- current_scan_data()
-     test <- scansDropped
-     selectInput("scansToAdd", label = "Add a Scan",
-                 choices = scansDropped, selected = "None")
+       selectInput("scansToAdd", label = "Add a Scan",
+                   choices = scansDropped, selected = "None")
    })
-   
-   # Updates the list of scans to choose from in the dropdown inputs for adding and removing scans.
-  # observe({
-   #   if (!is.null(input$scansData)) {
-    #    scan.names <- colnames(select(curr.scan.state, starts_with("scan")))
-     #   scan.names[length(scan.names) + 1] <- "None"
-      #  removed.names <- (scan.state)[-scansDropped]
-       # removed.names[length(removed.names) + 1] <- "None"
-      
-   #   updateSelectInput(session, "scansToRemove", label = "Remove a Scan", choices = scan.names, selected = "None")
-  #    updateSelectInput(session, "scansToAdd", label = "Add a Scan", choices = removed.names, selected = "None")
-    #  }
-  # })
    
    
    output$smoothControl <- renderUI({
@@ -180,39 +191,34 @@ shinyServer(function(input, output, session) {
         p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
         p("i.e: 0.10 = 10% smoothing span"),
         textInput("customSmooth", "Enter Smoothing Span", "0.05")
-     #   p("Click to optimize the smoothing to minimize the SSE (sum of squared errors)."),
-      #  actionButton("optimizeSmooth", "Optimize Smooth")
      )
    })
    
-   observeEvent(input$optimizeSmooth, {
-     
-   })
-
-  
-   observeEvent(input$customSmooth, {
-     curr.scan.graph.state <<- current_scan_data()
-     if (input$customSmooth > 0.01) {
-       loess.graph.data <- applyLoessSmooth(curr.scan.state, as.numeric(input$customSmooth))
-       curr.scan.state <<- loess.graph.data
-     }
-   })
-  
    
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
    # Add any desired modifications to amplog data here
    current_amp_data <- reactive({
-     return(amp.data)
+     current.amp.set <- amplog.data()
+     altered.amp.data <- current.amp.set
+     if (userinput) {
+       # apply modification
+       return(altered.amp.data)
+     }
+     if (sampletimestamp) {
+       return(altered.amp.data)
+     }
+     # default modification
+     return(altered.amp.data)
    })
    
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
    
    output$scanPlot <- renderPlot({
-     curr.scan.state <<- current_scan_data()
-     if (!is.null(input$scansData)) { # If the scans file was provided, then plot will be generated
-      scan.plot.data <- melt(curr.scan.state, id.vars = "sample.diameters", variable.name = 'series') 
+     selected.scan.data <- current_scan_data()
+     if (!is.null(input$scansData) && !is.null(selected.scan.data)) { # If the scans file was provided, then plot will be generated
+      scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series') 
       scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
          geom_line(aes(colour = series)) +
          xlab("Diameters (nm)") +
@@ -227,8 +233,8 @@ shinyServer(function(input, output, session) {
    
    # Generates the graph that visualizes the amplog data
    output$ampPlot <- renderPlot({
-     curr.amp.state <<- current_amp_data()
-     if (!is.null(input$amplog)) {
+     selected.amp.data <- current_amp_data()
+     if (!is.null(input$amplog) && !is.null(selected.amp.data)) {
        
        return(amp.plot)
      } else {

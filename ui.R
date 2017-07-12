@@ -39,8 +39,9 @@ shinyUI(fluidPage(
       hidden(
         div(id = "amplog-interactions",
             h3("Amplog Graph Interactions"),
-            uiOutput("timeControl"),
-            uiOutput("nmControl"))
+            p("If desired, select a start and end time for the amperage data to change the data displayed."),
+            uiOutput("timeControl")
+        )
       )
     ),
 
