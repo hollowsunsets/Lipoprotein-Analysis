@@ -37,6 +37,13 @@ test2 <- test2 %>% filter()
 na.omit(test2) %>%
   ggvis() %>%
     layer_paths(~X1, ~X3)
+selected.amp.data
 
+amp.plot <- ggplot(data = selected.amp.data) +
+                geom_line(aes(x = X1, y= X3, group = 1)) + 
+                xlab("Time (PST, Standard Time)") +
+                ylab("Amperage (amp)") +
+                ggtitle(paste0("Amperage Data")) + 
+                theme(plot.title = element_text(hjust = 0.5))
 
 amp.plot

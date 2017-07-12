@@ -5,8 +5,9 @@ library(xlsx) # dependency for reading in .xlsx files
 library(lubridate) # dependency for manipulating timestamps
 
 # --------------------- Test Variables --------------------------
- raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+# raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # raw.scans.file <- read.csv("data\\AIMDataset2.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+# raw.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
 
 # ---------------------- Functions -------------------------------
@@ -16,7 +17,7 @@ library(lubridate) # dependency for manipulating timestamps
 # contains the relevant scan data, prepared to be graphed.
 scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   # Remove all rows before the rows that contain diameter and count data
-  diameter.row.index <- grep("^Raw", raw.scans.file[,1])
+  diameter.row.index <- grep("^Raw", raw.scans.file[,1])                            
   raw.scans.df <- raw.scans.file[diameter.row.index:nrow(raw.scans.file),]
 
   # Change column names to the first row (which contains identifiers of samples)
@@ -74,8 +75,21 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   # Set the names of the sample data frames
   # If sparklink file was provided, get names from sparklink file. Else, set to default.
   if (!(is.null(raw.sparklink.file))) {
-    sample.names <- raw.sparklink.file %>% select(Sample.Name)
+    sample.names.first.row <- colnames(raw.sparklink.file)[3]
+    sample.names.other.rows <- raw.sparklink.file[,3:4]
+    if (length(sample.names < length(scan.graph.data))) {
+      sample.names <- rbind(sample.names, 
+                            c(paste0("unlabeled sample ", 
+                                     length(sample.names):
+                                       length(scan.graph.data))))
+   #   print(sample.names)
+    }
+    sample.names <- rbind(sample.names.first.row, sample.names.other.rows)
+   # print(length(sample.names))
+  #  print(length(scan.graph.data))
+    
     names(scan.graph.data) <- sample.names[,1]
+  
   } else {
     names(scan.graph.data) <- c(paste0("sample ", 1:length(scan.graph.data)))
   }
@@ -125,8 +139,12 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   
   # Data is labeled the same as the scan data itself to facilitate ease of access 
   if (!(is.null(raw.sparklink.file))) {
-    sample.names <- raw.sparklink.file %>% select(Sample.Name)
-    sample.times$sample.name <- sample.names[,1]
+    sample.names.first.row <- colnames(raw.sparklink.file)[3]
+    sample.names.other.rows <- raw.sparklink.file[,3:4]
+    sample.names <- rbind(sample.names.first.row, sample.names.other.rows)[,1]
+    
+    names(scan.graph.data) <- sample.names[,1]
+    
   } else {
     sample.times$sample.name <- c(paste0("sample ", 1:(nrow(sample.times))))
   }
@@ -149,6 +167,21 @@ setGraphLabels <- function(graph.labels, graph.data) {
 ampGraphData <- function(raw.amplog.file) {
   amp.graph.data <- raw.amplog.file %>% select(X1, X3) 
   return(amp.graph.data)
+}
+
+# Get start time
+# Get end time
+# Create interval that ranges -3 min, +3 min (this improves visibility of data and catches timestamps that don't exactly match)
+## i.e: start time = 1:05 PM, end time = 1:15 PM 
+## interval: 1:02 PM - 1:18 PM 
+# Get all times and amperage contained within that interval
+## Either use [start:end] indexing or use %in% to check inside the interval
+
+intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
+  selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
+  selected.amp.times <- amp.graph.data[,1][amp.graph.data$X1 %within% selected.interval]
+  selected.amp.data <- amp.graph.data %>% filter(X1 %in% selected.amp.times)
+  return(selected.amp.data)
 }
 
 # Deletes every nth column in the given data frame, beginning from the 

@@ -4,9 +4,11 @@ library(dplyr)
 # ----------------- Global Variables ---------------------------
 # Tracks the scans that have been dropped from the dataset
 scansDropped <- c("None")
-# new.scan.data <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
-raw.data <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))$`sample 1`
-smoothing.span <- 0.05
+# new.scan.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE), new.sparklink.file)
+# new.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE)
+# old.sparklink.file <- read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE)
+# raw.data <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))$`sample 1`
+# smoothing.span <- 0.05
 # new.amp.data <- ampGraphData(read.xlsx("data\\170522_new_data_format_for_JC_amplog.xlsx", sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
 # old.amp.data <- ampGraphData(read.xlsx("data\\ampdDataset2.xlsx", sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
 
@@ -67,19 +69,12 @@ calcSSE <- function(data.set, y.axis){
 }
 
 applyLoessSmooth <- function(raw.data, smoothing.span) {
-  print(raw.data)
   curr.scan.state <- raw.data[complete.cases(raw.data),]
-  print(curr.scan.state)
   ## response
   vars <- colnames(curr.scan.state)
   ## covariate
   id <- 1:nrow(curr.scan.state)
   
-  print(length(id))
-  print(length(vars))
-  print(length(colnames(curr.scan.state)))
-  print(ncol(curr.scan.state))
-  print(smoothing.span)
 
   ## define a loess filter function (fitting loess regression line)
   loess.filter <- function (x, span) loess(formula = paste(x, "id", sep = "~"),

@@ -15,6 +15,7 @@ source("graph-alteration.R")
 shinyServer(function(input, output, session) {
   # ----------------------------------------------- Global Variables --------------------------------------------------#
   scan.timestamps <- NULL
+  timeControlsEnabled <- FALSE
 
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
@@ -31,26 +32,16 @@ shinyServer(function(input, output, session) {
    # Retrieves and reads in and processes scans dataset.
    # To-Do: Add check to ensure it is an accepted format. 
    scans.data <- reactive({
-     print("General scan data is recognized. ")
      scan.data <- NULL
      infile <- input$scansData
-     print(infile)
-     print(input$scansData)
      if (!is.null(infile)) {
-       print(!is.null(infile))
-       print("Raw file is now being read in, now that the file path has a file to process.")
        raw.file <- read.csv(infile$datapath, stringsAsFactors = FALSE, na.strings = c("", NA)) 
-       print(raw.file)
        # Note: na.strings = c("", NA) is necessary to read timestamps in correctly
        if (!is.null(input$sparklinkData)) {
-         print("Sparklink file was provided. Labels will be appended to the returned file.")
          scan.data <- scanGraphData(raw.file, sparklink.data()) # if the sparklink file was provided,
-         print(scan.data)
          scan.timestamps <<- scanTimeStamps(raw.file, sparklink.data())
        } else {
-         print("No sparklink file provided. Default labels will be generated accordingly.")
          scan.data <- scanGraphData(raw.file) # else, set to default of "sample 1, sample 2, ..., etc"
-         print(scan.data)
          scan.timestamps <<- scanTimeStamps(raw.file)
        }
      }
@@ -78,7 +69,6 @@ shinyServer(function(input, output, session) {
     # Defines behavior for the sample selection dropdown menu, which 
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
-     print("Sample control is being rendered.")
      selectInput("sampleSelect", label = "Select a Sample",
                  choices = names(scans.data()), selected = names(scans.data())[1])
    })
@@ -95,19 +85,10 @@ shinyServer(function(input, output, session) {
    
    # Should only update when the sample being visualized is changed.
    current_sample_data <- reactive({
-     print("The desired sample from the overall scans dataset is being selected.")
      current.sample.set <- scans.data()
-     print("Let's hope that current.sample.set is not null.")
-     print(current.sample.set)
      if (any(input$sampleSelect %in% names(scan.data))) {
-       print("The corresponding sample from the selected sample (or the default) will be chosen.")
        return(current.sample.set[[input$sampleSelect]])
      } else {
-       print("Default dataset (the first in the set) is being returned for some reason. Names do not match, you better check why.")
-       print("Here's the non-matching inputs:")
-       print(input$sampleSelect)
-       print(names(scan.data))
-       print(current.sample.set[[1]])
        return(current.sample.set[[1]])
      }
    })
@@ -115,24 +96,15 @@ shinyServer(function(input, output, session) {
    current_scan_data <- reactive({
      selected.sample.data <- current_sample_data()
      altered.sample.data <- selected.sample.data
-     print("Current scan data is being reloaded")
        # Return the dataframe that corresponds with input$sampleSelect 
        # (i.e, graph.data$`std1`, which is the scan data for the std1 sample)
-     print(selected.sample.data)
-     print("Selected sample data better be null right now if nothing else is happening.")
        if (!(is.null(selected.sample.data))) {
-         print("Selected sample data is not null. Hopefully this is reactive and updates.")
-         print("Right now, curr.scan.graph.state is not null if this if statement is correct.")
-         print(input$customSmooth)
          if (!(is.null(input$customSmooth)) && input$customSmooth > 0.01) {
             altered.sample.data <- applyLoessSmooth(altered.sample.data, as.numeric(input$customSmooth))
          }
-         
-         print(input$scansToAdd)
          if (input$scansToAdd != "None" && !is.null(input$scansToAdd)) {
             altered.sample.data <- addBackScan(altered.sample.data, input$scansToAdd, selected.sample.data)
          }
-         print(input$scansToRemove)
          if (input$scansToRemove != "None"  && !is.null(input$scansToRemove)) {
             altered.sample.data <<- dropScan(altered.sample.data, input$scansToRemove)
          }
@@ -197,20 +169,46 @@ shinyServer(function(input, output, session) {
    
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
+   observeEvent(input$toggleTimeControls, {
+     timeControlsEnabled <<- TRUE
+     toggle("amp-time-controls")
+   })
+   
+   output$timeControl <- renderUI({
+     amp.range <- amplog.data()
+     start.time <- amp.range$X1[1]
+     end.time <- amp.range$X1[nrow(amp.range)]
+     sliderInput("range", "Time range:",
+                 min = start.time, 
+                 max = end.time, 
+                 value = c(start.time, start.time + (12 * 60)))
+   })
+   
+   
    # Add any desired modifications to amplog data here
    current_amp_data <- reactive({
      current.amp.set <- amplog.data()
      altered.amp.data <- current.amp.set
-     if (userinput) {
-       # apply modification
+     if (timeControlsEnabled) {
+       altered.amp.data <- intervalAmperageData(altered.amp.data,
+                                                input$timeControl[[1]],
+                                                input$timeControl[[2]])
        return(altered.amp.data)
      }
-     if (sampletimestamp) {
+     if (!(is.null(input$sampleSelect)) && !(is.null(scan.timestamps))) {
+       current.sample.timestamps <- scan.timestamps %>% filter(sample.name == input$sampleSelect)
+       altered.amp.data <- intervalAmperageData(altered.amp.data, 
+                                                current.sample.timestamps$start.time,
+                                                current.sample.timestamps$end.time)
        return(altered.amp.data)
      }
      # default modification
+     altered.amp.data <- intervalAmperageData(altered.amp.data, altered.amp.data[[1]], 
+                                              altered.amp.data[[1]] + (12 * 60))
      return(altered.amp.data)
    })
+   
+   
    
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
@@ -235,7 +233,12 @@ shinyServer(function(input, output, session) {
    output$ampPlot <- renderPlot({
      selected.amp.data <- current_amp_data()
      if (!is.null(input$amplog) && !is.null(selected.amp.data)) {
-       
+       amp.plot <- ggplot(data = selected.amp.data) +
+                       geom_line(aes(x = X1, y= X3, group = 1)) + 
+                       xlab("Time (PST, Standard Time)") +
+                       ylab("Amperage (amp)") +
+                       ggtitle(paste0("Amperage Data")) + 
+                       theme(plot.title = element_text(hjust = 0.5))
        return(amp.plot)
      } else {
        return(NULL)
