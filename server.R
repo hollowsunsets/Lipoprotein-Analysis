@@ -78,15 +78,16 @@ shinyServer(function(input, output, session) {
    observe({
      if (!is.null(input$sparklinkData)) {
        sparklink.data <- sparklink.data()
-       sample.names <- sparklink.data %>% select(Sample.Name)
-       updateSelectInput(session, "sampleSelect", choices = sample.names[,1])
+       sample.names <- sparklink.data[,3]
+       print(sample.names)
+       updateSelectInput(session, "sampleSelect", choices = sample.names)
      }
    })
    
    # Should only update when the sample being visualized is changed.
    current_sample_data <- reactive({
      current.sample.set <- scans.data()
-     if (any(input$sampleSelect %in% names(scan.data))) {
+     if (any(input$sampleSelect %in% names(current.sample.set))) {
        return(current.sample.set[[input$sampleSelect]])
      } else {
        return(current.sample.set[[1]])
@@ -170,14 +171,17 @@ shinyServer(function(input, output, session) {
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
    observeEvent(input$toggleTimeControls, {
-     timeControlsEnabled <<- TRUE
+     print("Time controls are toggled")
+     timeControlsEnabled <<- !timeControlsEnabled
      toggle("amp-time-controls")
    })
    
    output$timeControl <- renderUI({
      amp.range <- amplog.data()
+     print("Amp range data is done being accessed")
      start.time <- amp.range$X1[1]
      end.time <- amp.range$X1[nrow(amp.range)]
+     print("Time control input should be rendered now")
      sliderInput("range", "Time range:",
                  min = start.time, 
                  max = end.time, 
@@ -187,15 +191,18 @@ shinyServer(function(input, output, session) {
    
    # Add any desired modifications to amplog data here
    current_amp_data <- reactive({
+     print("Currently processing state for amp data")
      current.amp.set <- amplog.data()
      altered.amp.data <- current.amp.set
      if (timeControlsEnabled) {
+       print("Time controls are enabled. Amp graph will be set to user input.")
        altered.amp.data <- intervalAmperageData(altered.amp.data,
                                                 input$timeControl[[1]],
                                                 input$timeControl[[2]])
        return(altered.amp.data)
      }
      if (!(is.null(input$sampleSelect)) && !(is.null(scan.timestamps))) {
+       print("Sample data is present. Amp data will be set to corresponding scan timestamps.")
        current.sample.timestamps <- scan.timestamps %>% filter(sample.name == input$sampleSelect)
        altered.amp.data <- intervalAmperageData(altered.amp.data, 
                                                 current.sample.timestamps$start.time,
@@ -203,6 +210,7 @@ shinyServer(function(input, output, session) {
        return(altered.amp.data)
      }
      # default modification
+     print("Amp graph will be set to default setting.")
      altered.amp.data <- intervalAmperageData(altered.amp.data, altered.amp.data[[1]], 
                                               altered.amp.data[[1]] + (12 * 60))
      return(altered.amp.data)

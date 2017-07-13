@@ -141,9 +141,20 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   if (!(is.null(raw.sparklink.file))) {
     sample.names.first.row <- colnames(raw.sparklink.file)[3]
     sample.names.other.rows <- raw.sparklink.file[,3:4]
-    sample.names <- rbind(sample.names.first.row, sample.names.other.rows)[,1]
+    if (nrow(sample.names <  nrow(sample.times))) {
+      sample.names <- rbind(sample.names, 
+                            c(paste0("unlabeled sample ", 
+                                     nrow(sample.names):
+                                       nrow(sample.times))))
+      #   print(sample.names)
+    }
+    sample.names <- rbind(sample.names.first.row, sample.names.other.rows)
+    print(sample.names)
+    # print(length(sample.names))
+    #  print(length(scan.graph.data))
     
-    names(scan.graph.data) <- sample.names[,1]
+    names(sample.times) <- sample.names
+    
     
   } else {
     sample.times$sample.name <- c(paste0("sample ", 1:(nrow(sample.times))))
