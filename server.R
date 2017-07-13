@@ -2,9 +2,11 @@
 library(shiny)
 library(shinyjs)
 library(dplyr)
-library(xlsx)
 library(ggplot2)
 library(reshape2)
+library(readxl)
+library(lubridate)
+
 
 options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
@@ -21,6 +23,7 @@ shinyServer(function(input, output, session) {
 
     # Retrieves and reads in the given data files 
    sparklink.data <- reactive({
+     print("Currently reading in raw Sparklink file")
      infile <- input$sparklinkData
      if (is.null(infile)) {
        return(NULL)
@@ -32,6 +35,7 @@ shinyServer(function(input, output, session) {
    # Retrieves and reads in and processes scans dataset.
    # To-Do: Add check to ensure it is an accepted format. 
    scans.data <- reactive({
+     print("Currently reading in raw scans file")
      scan.data <- NULL
      infile <- input$scansData
      if (!is.null(infile)) {
@@ -49,11 +53,19 @@ shinyServer(function(input, output, session) {
    })
    
    amplog.data <- reactive({
+     print("Currently reading in raw amperage file")
      infile <- input$amplogData
      if (is.null(infile)) {
        return(NULL)
      }
-     return(ampGraphData(read.xlsx(infile$datapath, sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE)))
+     # Note: Shiny keeps temporary files w/o extensions. read_excel needs an .xlsx extension to run. 
+     # Following lines are a workaround to use readxl with Shiny by making a copy of the input file with the extension.
+     # Watch for resolution for #85 on Github for tidyverse/readxl
+     file.copy(infile$datapath, paste(infile$datapath, ".xlsx", sep="")) 
+     raw.amp.file <- readxl::read_excel(paste(infile$datapath, ".xlsx", sep=""), col_names = FALSE)
+     trimmed.amp.file <- raw.amp.file[complete.cases(raw.amp.file),]
+     print("Amp file was recognized as not null. Processing.")
+     return(ampGraphData(trimmed.amp.file))
    })
      
    # ----------------------------------------- Scan Interaction Functions ---------------------------------------- #
@@ -179,8 +191,12 @@ shinyServer(function(input, output, session) {
    output$timeControl <- renderUI({
      amp.range <- amplog.data()
      print("Amp range data is done being accessed")
-     start.time <- amp.range$X1[1]
-     end.time <- amp.range$X1[nrow(amp.range)]
+     start.time <- amp.range$X0[1]
+     print("Start time for the slider:")
+     print(start.time)
+     end.time <- tail(amp.range$X0, n = 1)
+     print("End time for the slider:")
+     print(end.time)
      print("Time control input should be rendered now")
      sliderInput("range", "Time range:",
                  min = start.time, 
@@ -199,6 +215,8 @@ shinyServer(function(input, output, session) {
        altered.amp.data <- intervalAmperageData(altered.amp.data,
                                                 input$timeControl[[1]],
                                                 input$timeControl[[2]])
+       print("Amp graph data is done being altered.")
+       
        return(altered.amp.data)
      }
      if (!(is.null(input$sampleSelect)) && !(is.null(scan.timestamps))) {
@@ -207,12 +225,15 @@ shinyServer(function(input, output, session) {
        altered.amp.data <- intervalAmperageData(altered.amp.data, 
                                                 current.sample.timestamps$start.time,
                                                 current.sample.timestamps$end.time)
+       print("Amp graph data is done being altered.")
+       
        return(altered.amp.data)
      }
      # default modification
      print("Amp graph will be set to default setting.")
      altered.amp.data <- intervalAmperageData(altered.amp.data, altered.amp.data[[1]], 
                                               altered.amp.data[[1]] + (12 * 60))
+     print("Amp graph data is done being altered.")
      return(altered.amp.data)
    })
    
@@ -239,16 +260,25 @@ shinyServer(function(input, output, session) {
    
    # Generates the graph that visualizes the amplog data
    output$ampPlot <- renderPlot({
+     print("Graph for amperage data is being created.")
+     print("Data for graph is being retrieved.")
      selected.amp.data <- current_amp_data()
+     print("Graph data is done being retrieved.")
+     print(is.null(selected.amp.data))
+     print(is.null(input$amplog))
+     print(!is.null(input$amplog) && !is.null(selected.amp.data))
      if (!is.null(input$amplog) && !is.null(selected.amp.data)) {
+       print("All components for the graph are present.")
        amp.plot <- ggplot(data = selected.amp.data) +
-                       geom_line(aes(x = X1, y= X3, group = 1)) + 
+                       geom_line(aes(x = X0, y= X2, group = 1)) + 
                        xlab("Time (PST, Standard Time)") +
                        ylab("Amperage (amp)") +
                        ggtitle(paste0("Amperage Data")) + 
                        theme(plot.title = element_text(hjust = 0.5))
+       print("Graph is done being created. Should be rendering now.")
        return(amp.plot)
      } else {
+       print("Graph returned NULL for some reason.")
        return(NULL)
      }
    })

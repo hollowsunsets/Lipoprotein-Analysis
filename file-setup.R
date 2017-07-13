@@ -1,8 +1,8 @@
 # --------------------- Dependencies ---------------------------
-
-library(dplyr) # dependency for general data wrangling
-library(xlsx) # dependency for reading in .xlsx files
-library(lubridate) # dependency for manipulating timestamps
+# NOTE: Comment out or move to server.R after done testing
+# library(dplyr) # dependency for general data wrangling
+# library(readxl) # dependency for reading in .xlsx files
+# library(lubridate) # dependency for manipulating timestamps
 
 # --------------------- Test Variables --------------------------
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
@@ -176,7 +176,10 @@ setGraphLabels <- function(graph.labels, graph.data) {
 
 # Returns a data frame to be graphed from the given amplog file.
 ampGraphData <- function(raw.amplog.file) {
-  amp.graph.data <- raw.amplog.file %>% select(X1, X3) 
+  
+  print("Raw amp data was passed through read.xlsx. Now selecting relevant data (time and amperage)")
+  amp.graph.data <- raw.amplog.file %>% select(X0, X2)
+  print("Amperage data selection is complete. Returning file.")
   return(amp.graph.data)
 }
 
@@ -189,9 +192,15 @@ ampGraphData <- function(raw.amplog.file) {
 ## Either use [start:end] indexing or use %in% to check inside the interval
 
 intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
+  print("Time interval for graph data is being processed.")
+  print("Start time: ")
+  print(start.time)
+  print("End time: ")
+  print(end.time)
   selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
-  selected.amp.times <- amp.graph.data[,1][amp.graph.data$X1 %within% selected.interval]
-  selected.amp.data <- amp.graph.data %>% filter(X1 %in% selected.amp.times)
+  selected.amp.times <- amp.graph.data[,1][amp.graph.data$X0 %within% selected.interval]
+  print("Amperage graph data has been filtered to the given start and end time.")
+  selected.amp.data <- amp.graph.data %>% filter(X0 %in% selected.amp.times)
   return(selected.amp.data)
 }
 

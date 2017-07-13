@@ -1,15 +1,19 @@
 library(dplyr)
-library(xlsx)
+library(readxl)
 library(plotly)
 library(ggplot2)
 library(ggvis)
 
+
 # read.xlsx is super slow. Perhaps only read in a subset?
-test2 <- ampGraphData(read.xlsx("data\\170522_new_data_format_for_JC_amplog.xlsx", sheetIndex = 1, as.data.frame = T, header = F, stringsAsFactors = FALSE))
+test2 <- ampGraphData(xl_test <- read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
 test2 <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
 test3 <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))
 
-
+xl_test <- read_excel("data\\170622_Study114_Amplog.xlsx", col_names = FALSE)
+xl_test <- xl_test[complete.cases(xl_test),]
+tail.test <- tail(xl_test$X0, n = 1)
+  
 scan.data.test <- test2[,1:6]
 scan.data.test2 <- test3[,1:6]
 
