@@ -7,9 +7,9 @@
 # --------------------- Test Variables --------------------------
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # raw.scans.file <- read.csv("data\\AIMDataset2.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
- raw.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
+# raw.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
 # raw.scans.file <- read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)) 
- sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
+# sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
 # amp.graph.data <- ampGraphData(read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
 
@@ -140,14 +140,16 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   sample.times$start.time <- floor_date(sample.times$start.time, "minute")
   sample.times$end.time <- ceiling_date(sample.times$end.time, "minute")
   
-  sample.names <- raw.sparklink.file[,3]
+  test <- nrow(sample.names) < nrow(sample.times)
+
   # Data is labeled the same as the scan data itself to facilitate ease of access 
   if (!(is.null(raw.sparklink.file))) {
-    if (nrow(sample.names) <  nrow(sample.times)) {
-      sample.size.difference <- nrow(sample.times) - nrow(sample.names)
+    sample.names <- as.data.frame(raw.sparklink.file[,3], stringsAsFactors = FALSE)
+    sample.size.difference <- nrow(sample.times) - nrow(sample.names)
+    if (nrow(sample.names) < nrow(sample.times)) {
       sample.names <- rbind(sample.names, 
                             c(paste0("unlabeled sample ", 
-                                     nrow(sample.names):
+                                    nrow(sample.names):
                                     nrow(sample.names) + sample.size.difference)))
     }
     

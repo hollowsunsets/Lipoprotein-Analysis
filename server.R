@@ -28,7 +28,7 @@ shinyServer(function(input, output, session) {
      if (is.null(infile)) {
        return(NULL)
      }
-     sparklink.raw.data <- read.csv(infile$datapath, stringsAsFactors = FALSE)
+     sparklink.raw.data <- read.csv(infile$datapath, stringsAsFactors = FALSE, header = FALSE)
      return(sparklink.raw.data)
    })
    
@@ -39,7 +39,7 @@ shinyServer(function(input, output, session) {
      scan.data <- NULL
      infile <- input$scansData
      if (!is.null(infile)) {
-       raw.file <- read.csv(infile$datapath, stringsAsFactors = FALSE, na.strings = c("", NA), header = FALSE) 
+       raw.file <- read.csv(infile$datapath, stringsAsFactors = FALSE, na.strings = c("", NA)) 
        # Note: na.strings = c("", NA) is necessary to read timestamps in correctly
        if (!is.null(input$sparklinkData)) {
          scan.data <- scanGraphData(raw.file, sparklink.data()) # if the sparklink file was provided,
