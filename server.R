@@ -39,7 +39,7 @@ shinyServer(function(input, output, session) {
      scan.data <- NULL
      infile <- input$scansData
      if (!is.null(infile)) {
-       raw.file <- read.csv(infile$datapath, stringsAsFactors = FALSE, na.strings = c("", NA)) 
+       raw.file <- read.csv(infile$datapath, stringsAsFactors = FALSE, na.strings = c("", NA), header = FALSE) 
        # Note: na.strings = c("", NA) is necessary to read timestamps in correctly
        if (!is.null(input$sparklinkData)) {
          scan.data <- scanGraphData(raw.file, sparklink.data()) # if the sparklink file was provided,
@@ -81,6 +81,7 @@ shinyServer(function(input, output, session) {
     # Defines behavior for the sample selection dropdown menu, which 
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
+     print(colnames(scans.data()))
      selectInput("sampleSelect", label = "Select a Sample",
                  choices = names(scans.data()), selected = names(scans.data())[1])
    })
@@ -231,8 +232,8 @@ shinyServer(function(input, output, session) {
      }
      # default modification
      print("Amp graph will be set to default setting.")
-     altered.amp.data <- intervalAmperageData(altered.amp.data, altered.amp.data[[1]], 
-                                              altered.amp.data[[1]] + (12 * 60))
+     altered.amp.data <- intervalAmperageData(altered.amp.data, altered.amp.data$X0[1], 
+                                              altered.amp.data$X0[1] + (12 * 60))
      print("Amp graph data is done being altered.")
      return(altered.amp.data)
    })

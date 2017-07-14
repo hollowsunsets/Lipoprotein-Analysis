@@ -7,8 +7,12 @@
 # --------------------- Test Variables --------------------------
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # raw.scans.file <- read.csv("data\\AIMDataset2.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
-# raw.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE)
+ raw.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
+# raw.scans.file <- read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)) 
+ sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
+# amp.graph.data <- ampGraphData(read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
+
 
 # ---------------------- Functions -------------------------------
 
@@ -136,25 +140,18 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   sample.times$start.time <- floor_date(sample.times$start.time, "minute")
   sample.times$end.time <- ceiling_date(sample.times$end.time, "minute")
   
-  
+  sample.names <- raw.sparklink.file[,3]
   # Data is labeled the same as the scan data itself to facilitate ease of access 
   if (!(is.null(raw.sparklink.file))) {
-    sample.names.first.row <- colnames(raw.sparklink.file)[3]
-    sample.names.other.rows <- raw.sparklink.file[,3:4]
-    if (nrow(sample.names <  nrow(sample.times))) {
+    if (nrow(sample.names) <  nrow(sample.times)) {
+      sample.size.difference <- nrow(sample.times) - nrow(sample.names)
       sample.names <- rbind(sample.names, 
                             c(paste0("unlabeled sample ", 
                                      nrow(sample.names):
-                                       nrow(sample.times))))
-      #   print(sample.names)
+                                    nrow(sample.names) + sample.size.difference)))
     }
-    sample.names <- rbind(sample.names.first.row, sample.names.other.rows)
-    print(sample.names)
-    # print(length(sample.names))
-    #  print(length(scan.graph.data))
     
-    names(sample.times) <- sample.names
-    
+    sample.times$sample.name <- sample.names[,1]
     
   } else {
     sample.times$sample.name <- c(paste0("sample ", 1:(nrow(sample.times))))
@@ -198,7 +195,10 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
   print("End time: ")
   print(end.time)
   selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
+  print("Selected interval:")
+  print(selected.interval)
   selected.amp.times <- amp.graph.data[,1][amp.graph.data$X0 %within% selected.interval]
+  print(selected.amp.times)
   print("Amperage graph data has been filtered to the given start and end time.")
   selected.amp.data <- amp.graph.data %>% filter(X0 %in% selected.amp.times)
   return(selected.amp.data)

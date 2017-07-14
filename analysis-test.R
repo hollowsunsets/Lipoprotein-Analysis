@@ -6,9 +6,24 @@ library(ggvis)
 
 
 # read.xlsx is super slow. Perhaps only read in a subset?
-test2 <- ampGraphData(xl_test <- read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
+test2 <- ampGraphData(read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
 test2 <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
 test3 <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))
+
+
+
+start.time <- test2[[1]][[1]]
+end.time <- test2[[1]][[200]]
+selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
+
+test2.contained <- test2$X0 %within% selected.interval
+
+test2.times <- as.vector(test2[,1])
+
+final.times <- test2.times[test2.contained[test2.contained == TRUE]]
+
+selected.amp.times <- amp.graph.data[,1][amp.graph.data$X0 %within% selected.interval]
+
 
 xl_test <- read_excel("data\\170622_Study114_Amplog.xlsx", col_names = FALSE)
 xl_test <- xl_test[complete.cases(xl_test),]
