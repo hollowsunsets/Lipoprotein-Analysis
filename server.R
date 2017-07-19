@@ -18,7 +18,6 @@ shinyServer(function(input, output, session) {
   # ----------------------------------------------- Global Variables --------------------------------------------------#
   scan.timestamps <- NULL
   timeControlsEnabled <- FALSE
-
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
@@ -183,12 +182,6 @@ shinyServer(function(input, output, session) {
    
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
-   observeEvent(input$toggleTimeControls, {
-     print("Time controls are toggled")
-     timeControlsEnabled <<- !timeControlsEnabled
-     toggle("amp-time-controls")
-   })
-   
    output$timeControl <- renderUI({
      amp.range <- amplog.data()
      print("Amp range data is done being accessed")
@@ -199,6 +192,8 @@ shinyServer(function(input, output, session) {
      print("End time for the slider:")
      print(end.time)
      print("Time control input should be rendered now")
+     print("Default end time on the slider:")
+     print(start.time + (12 * 60))
      sliderInput("range", "Time range:",
                  min = start.time, 
                  max = end.time, 
@@ -211,8 +206,12 @@ shinyServer(function(input, output, session) {
      print("Currently processing state for amp data")
      current.amp.set <- amplog.data()
      altered.amp.data <- current.amp.set
+     print(timeControlsEnabled)
+     print(is.null(input$timeControl))
+     print(is.null(input$timeControls))
      if (timeControlsEnabled) {
        print("Time controls are enabled. Amp graph will be set to user input.")
+       print(input$timeControl)
        altered.amp.data <- intervalAmperageData(altered.amp.data,
                                                 input$timeControl[[1]],
                                                 input$timeControl[[2]])
@@ -232,6 +231,10 @@ shinyServer(function(input, output, session) {
      }
      # default modification
      print("Amp graph will be set to default setting.")
+     print("Start time for the data:")
+     print(altered.amp.data$X0[1])
+     print("End time for the data:")
+     print(altered.amp.data$X0[1] + (12 * 60))
      altered.amp.data <- intervalAmperageData(altered.amp.data, altered.amp.data$X0[1], 
                                               altered.amp.data$X0[1] + (12 * 60))
      print("Amp graph data is done being altered.")
@@ -239,7 +242,13 @@ shinyServer(function(input, output, session) {
    })
    
    
-   
+   observeEvent(input$toggleTimeControls, {
+     print("Time controls are toggled")
+     timeControlsEnabled <<- !timeControlsEnabled
+     toggle("amp-time-controls")
+     current.amp.data.reload <- current_amp_data()
+     print("Amp log data was reloaded.")
+   })
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
    
@@ -266,9 +275,9 @@ shinyServer(function(input, output, session) {
      selected.amp.data <- current_amp_data()
      print("Graph data is done being retrieved.")
      print(is.null(selected.amp.data))
-     print(is.null(input$amplog))
-     print(!is.null(input$amplog) && !is.null(selected.amp.data))
-     if (!is.null(input$amplog) && !is.null(selected.amp.data)) {
+     print(is.null(input$amplogData))
+     print(!is.null(input$amplogData) && !is.null(selected.amp.data))
+     if (!is.null(input$amplogData) && !is.null(selected.amp.data)) {
        print("All components for the graph are present.")
        amp.plot <- ggplot(data = selected.amp.data) +
                        geom_line(aes(x = X0, y= X2, group = 1)) + 

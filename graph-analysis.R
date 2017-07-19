@@ -25,8 +25,9 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 
 
 
+new.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE)
 
-
+graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE), new.sparklink.file)
 
 
 
@@ -34,11 +35,8 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 # Averages the data from all four scans into one dataset for each sample
 # Returns in the format of a dataframe.
 
-getAverageScans <- function(graph.data, sample.names = NULL) {
+getAverageScans <- function(graph.data) {
   avg.scans <- data.frame(names(graph.data))
-  if (!(is.null(sample.names))) {
-    avg.scans[,1] <- as.data.frame(sample.names[,1])
-  }
   avg.scans <- avg.scans %>% mutate(n=n())
   for (i in 1:length(graph.data)){
     avg.scans <- avg.scans %>% mutate("")

@@ -1,8 +1,8 @@
 # --------------------- Dependencies ---------------------------
 # NOTE: Comment out or move to server.R after done testing
-# library(dplyr) # dependency for general data wrangling
-# library(readxl) # dependency for reading in .xlsx files
-# library(lubridate) # dependency for manipulating timestamps
+ library(dplyr) # dependency for general data wrangling
+ library(readxl) # dependency for reading in .xlsx files
+ library(lubridate) # dependency for manipulating timestamps
 
 # --------------------- Test Variables --------------------------
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
@@ -11,7 +11,9 @@
 # raw.scans.file <- read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)) 
 # sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
-# amp.graph.data <- ampGraphData(read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
+# amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
+# test.amprange <- intervalAmperageData(amp.graph.data, amp.graph.data$X0[1], amp.graph.data$X0[1] + (12 * 60))
+ 
 
 
 # ---------------------- Functions -------------------------------
@@ -79,18 +81,18 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   # Set the names of the sample data frames
   # If sparklink file was provided, get names from sparklink file. Else, set to default.
   if (!(is.null(raw.sparklink.file))) {
-    sample.names.first.row <- colnames(raw.sparklink.file)[3]
-    sample.names.other.rows <- raw.sparklink.file[,3:4]
-    if (length(sample.names < length(scan.graph.data))) {
+    sample.names <- as.data.frame(raw.sparklink.file[,3], stringsAsFactors = FALSE)
+    sample.size.difference <- nrow(sample.times) - nrow(sample.names)
+    if (nrow(sample.names) < nrow(sample.tihumes)) {
       sample.names <- rbind(sample.names, 
                             c(paste0("unlabeled sample ", 
-                                     length(sample.names):
-                                       length(scan.graph.data))))
-   #   print(sample.names)
+                                     nrow(sample.names):
+                                     nrow(sample.names) + sample.size.difference)))
     }
     sample.names <- rbind(sample.names.first.row, sample.names.other.rows)
    # print(length(sample.names))
   #  print(length(scan.graph.data))
+    
     
     names(scan.graph.data) <- sample.names[,1]
   
@@ -140,12 +142,16 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   sample.times$start.time <- floor_date(sample.times$start.time, "minute")
   sample.times$end.time <- ceiling_date(sample.times$end.time, "minute")
   
-  test <- nrow(sample.names) < nrow(sample.times)
-
   # Data is labeled the same as the scan data itself to facilitate ease of access 
   if (!(is.null(raw.sparklink.file))) {
+    # Retrieves the sample names from the sparklink file, assuming a specific format.
     sample.names <- as.data.frame(raw.sparklink.file[,3], stringsAsFactors = FALSE)
+    
+    # Gets the difference in sample columns, in the case that the amount of samples and the number of 
+    # sample labels are consistent (which has been the case previously)
     sample.size.difference <- nrow(sample.times) - nrow(sample.names)
+    
+    # Adds "unlabeled sample" + the unlabeled index to ensure that every column has a label
     if (nrow(sample.names) < nrow(sample.times)) {
       sample.names <- rbind(sample.names, 
                             c(paste0("unlabeled sample ", 
@@ -153,18 +159,16 @@ scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
                                     nrow(sample.names) + sample.size.difference)))
     }
     
+    # Adds a column that contains the sample labels to the sample times
     sample.times$sample.name <- sample.names[,1]
     
   } else {
+    # If no sparklink file was provided, then the sample names will be set to "sample 1, sample 2..." etc
     sample.times$sample.name <- c(paste0("sample ", 1:(nrow(sample.times))))
   }
   
   return(sample.times)
 }
-
-
-# scan.graph.data <- scanGraphData(raw.scans.file)
-# scan.timestamps <- scanTimeStamps(raw.scans.file)
 
 # Function for setting the column names of the graph data so the 
 # data processing doesn't have to be run through again. 
@@ -174,35 +178,25 @@ setGraphLabels <- function(graph.labels, graph.data) {
 }
 
 # Returns a data frame to be graphed from the given amplog file.
+# Assumes a particular format for the amplog file. 
 ampGraphData <- function(raw.amplog.file) {
-  
-  print("Raw amp data was passed through read.xlsx. Now selecting relevant data (time and amperage)")
   amp.graph.data <- raw.amplog.file %>% select(X0, X2)
-  print("Amperage data selection is complete. Returning file.")
   return(amp.graph.data)
 }
 
-# Get start time
-# Get end time
-# Create interval that ranges -3 min, +3 min (this improves visibility of data and catches timestamps that don't exactly match)
-## i.e: start time = 1:05 PM, end time = 1:15 PM 
-## interval: 1:02 PM - 1:18 PM 
-# Get all times and amperage contained within that interval
-## Either use [start:end] indexing or use %in% to check inside the interval
-
+# Returns a data frame that contains the time stamps and amperage data from the given amperage dataframe 
+# within the given start time and end time, +/- 3 minutes.
 intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
-  print("Time interval for graph data is being processed.")
-  print("Start time: ")
-  print(start.time)
-  print("End time: ")
-  print(end.time)
+  # Calculates the time interval which will represent the range of amperage data that will be graphed.
+  # Time interval is set to +/- 3 minutes for improved graph readability and to catch times that are not an exact match.
+  # i.e, cases where start time is 12:15:30, amperage time is 12:15:29
   selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
-  print("Selected interval:")
-  print(selected.interval)
-  selected.amp.times <- amp.graph.data[,1][amp.graph.data$X0 %within% selected.interval]
-  print(selected.amp.times)
-  print("Amperage graph data has been filtered to the given start and end time.")
-  selected.amp.data <- amp.graph.data %>% filter(X0 %in% selected.amp.times)
+  
+  # Selects the times from the data that are contained within the previously calculated time interval.
+  selected.amp.times <- amp.graph.data[,1] %>% filter(amp.graph.data$X0 %within% selected.interval)
+  
+  # Joins the corresponding amperage data to the selected time stamps.
+  selected.amp.data <- inner_join(selected.amp.times, amp.graph.data, by = "X0")
   return(selected.amp.data)
 }
 
