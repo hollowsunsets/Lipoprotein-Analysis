@@ -146,14 +146,13 @@ shinyServer(function(input, output, session) {
    }, once = TRUE)
    
    # Generates average scan file to be returned through download button
-   output$averageScans <- reactive({
+   output$averageScans <- downloadHandler(
      filename = function() {
        paste("average-scans", '.csv', sep='')
-     }
+     },
      content = function(file) {
-       write.csv(current_average_data(), file)
-     }
-   })
+       write.csv(getAverageScans(scans.data()), file)
+     })
    
    output$removeScans <- renderUI({
      selected.sample.data <- current_sample_data()

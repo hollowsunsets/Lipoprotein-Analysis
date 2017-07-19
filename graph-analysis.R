@@ -1,6 +1,3 @@
-library(dplyr)
-source("file-setup.R")
-library(data.table)
 graphPairIsSimilar <- function(graph.data1.x, graph.data1.y, graph.data2.x, graph.data2.y) {
   # Calculate integral between the two graphs
   # If sum of area is > var, then return true. Else, return false.
@@ -25,9 +22,9 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 
 
 
-sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
+# sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
 
-graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)), sparklink.file)
+# graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)), sparklink.file)
 
 
 # Assumed data input format is the returned format from scanGraphData(). 
