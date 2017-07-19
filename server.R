@@ -77,10 +77,14 @@ shinyServer(function(input, output, session) {
      toggle("file-selection-controls")
    })
    
+    observeEvent(input$displayFullAmpGraph, {
+      toggle("fullAmpPlot")
+    })
     # Defines behavior for the sample selection dropdown menu, which 
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
      print(colnames(scans.data()))
+     print(names(scans.data()))
      selectInput("sampleSelect", label = "Select a Sample",
                  choices = names(scans.data()), selected = names(scans.data())[1])
    })
@@ -100,6 +104,8 @@ shinyServer(function(input, output, session) {
    current_sample_data <- reactive({
      current.sample.set <- scans.data()
      if (any(input$sampleSelect %in% names(current.sample.set))) {
+       print("sample selected is:")
+       print(input$sampleSelect)
        return(current.sample.set[[input$sampleSelect]])
      } else {
        return(current.sample.set[[1]])
@@ -270,11 +276,17 @@ shinyServer(function(input, output, session) {
      print(!is.null(input$amplogData) && !is.null(selected.amp.data))
      if (!is.null(input$amplogData) && !is.null(selected.amp.data)) {
        print("All components for the graph are present.")
+       print(format(selected.amp.data$X0[[1]], usetz=TRUE, tz="Etc/GMT+8"))
+       print(format(tail(selected.amp.data$X0, n = 1), usetz=TRUE, tz="Etc/GMT+8"))
+       fuck.you.r <- "this graph is shit"
+       amp.plot.subtitle <- paste0("From ", format(selected.amp.data$X0[[1]], usetz=TRUE, tz="Etc/GMT+8"),
+                              " to ", format(tail(selected.amp.data$X0, n = 1), usetz=TRUE, tz="Etc/GMT+8"))
        amp.plot <- ggplot(data = selected.amp.data) +
                        geom_line(aes(x = X0, y= X2, group = 1)) + 
                        xlab("Time (PST, Standard Time)") +
                        ylab("Amperage (amp)") +
-                       ggtitle(paste0("Amperage Data")) + 
+                       ggtitle(bquote(atop("Selected Amperage Data", 
+                                          atop(.(amp.plot.subtitle))))) +
                        theme(plot.title = element_text(hjust = 0.5))
        print("Graph is done being created. Should be rendering now.")
        return(amp.plot)
@@ -284,5 +296,19 @@ shinyServer(function(input, output, session) {
      }
    })
    
+   output$fullAmpPlot <- renderPlot({
+     full.amp.data <- amplog.data()
+     if (!is.null(input$amplogData) && !is.null(full.amp.data)) {
+       full.amp.plot <- ggplot(data = full.amp.data) + 
+                          geom_line(aes(x = X0, y = X2, group = 1)) +
+                           xlab("Time (PST, Standard Time)") +
+                           ylab("Amperage (amp)") +
+                           ggtitle(paste0("Entire Amperage Dataset")) + 
+                           theme(plot.title = element_text(hjust = 0.5))
+       return(full.amp.plot)
+     } else {
+       return(NULL)
+     }
+   })
 
 })

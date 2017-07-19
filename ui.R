@@ -39,6 +39,8 @@ shinyUI(fluidPage(
       hidden(
         div(id = "amplog-interactions",
             h3("Amplog Graph Interactions"),
+            p("Click the button below to display a graph that visualizes the entire amperage dataset."),
+            actionButton("displayFullAmpGraph", "Display Amp Graph with Entire Dataset"),
             actionButton("toggleTimeControls", "Toggle Time Controls"),
             hidden(
               div(id = "amp-time-controls",
@@ -59,8 +61,12 @@ shinyUI(fluidPage(
           ),
         div(id = "amp-message", "Please provide an amplog dataset to view the amplog visualization."),
         hidden(
-        div(id = "ampPlot", 
-            plotOutput("ampPlot"))
+          div(id = "ampPlot", 
+              plotOutput("ampPlot"))
+          ),
+        hidden(
+          div(id = "fullAmpPlot",
+              plotOutput("fullAmpPlot"))
         )
       )
     )
