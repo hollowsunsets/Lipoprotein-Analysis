@@ -27,8 +27,7 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 
 sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
 
-graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE), sparklink.file)
-
+graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)), sparklink.file)
 
 
 # Assumed data input format is the returned format from scanGraphData(). 
@@ -36,15 +35,23 @@ graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsF
 # Returns in the format of a dataframe.
 getAverageScans <- function(graph.data, sparklink.file = NULL) {
   # Add the overall sample labels to the graph, which should have been generated already for the graph data
-  avg.scans <-  rbind(c(" ", names(graph.data)))
+  avg.scans <-  rbind(c("Sample Label", names(graph.data)))
 
   # Remove any columns that contain NA values that may have resulted from given files having irregular sizes (i.e, 46 labels for 47 scans)
   avg.scans <- avg.scans[ , colSums(is.na(avg.scans)) == 0]
 
   # If a Sparklink file was provided, add sample names. 
   if (!is.null(sparklink.file)) {
+    sample.names <- rbind(c("Sample Name", sparklink.file[,4]))
+    sample.size.difference <- (length(graph.data) + 1) - length(sample.names)
+    if (length(sample.names) < length(graph.data) + 1) {
+      sample.names <- cbind(sample.names, 
+                            c(paste0("unnamed sample ", 
+                                     length(sample.names):
+                                     length(sample.names))))
+    }
     avg.scans <- avg.scans %>% 
-      rbind(c("Sample Name", sparklink.file[ ,4]))
+      rbind(sample.names)
   }
   
   # Add a row containing the "Diameter" and matching "inj" labels for each sample
@@ -67,8 +74,6 @@ getAverageScans <- function(graph.data, sparklink.file = NULL) {
       names(avg.sample.data) <- names(avg.scans)
       avg.scans <- bind_rows(avg.scans, avg.sample.data)
     }
-  
+  avg.scans <- avg.scans[complete.cases(avg.scans),]
   return(avg.scans)
 }
-test4 <- getAverageScans(graph.data, sparklink.file)
-
