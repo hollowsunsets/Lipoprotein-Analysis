@@ -23,8 +23,8 @@ graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operato
 
 
 # sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
-
-# graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)), sparklink.file)
+# test2 <- getAverageScans(graph.data)
+# graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
 
 
 # Assumed data input format is the returned format from scanGraphData(). 
@@ -49,11 +49,15 @@ getAverageScans <- function(graph.data, sparklink.file = NULL) {
     }
     avg.scans <- avg.scans %>% 
       rbind(sample.names)
+    avg.scans <- avg.scans %>%
+      rbind(c("Diameter", paste0("inj", 1:(ncol(avg.scans) - 1))))
+  } else {
+    avg.scans <- avg.scans %>%
+      rbind(c("Diameter", paste0("inj", 1:(length(avg.scans) - 1))))
   }
   
   # Add a row containing the "Diameter" and matching "inj" labels for each sample
-  avg.scans <- avg.scans %>%
-    rbind(c("Diameter", paste0("inj", 1:(ncol(avg.scans) - 1))))
+
   avg.scans <- as.data.frame(avg.scans, stringsAsFactors = FALSE)
     if (!is.null(graph.data)) {
       # Retrieves the diameters from the first set of sample data. The diameters should be the same for every dataset.

@@ -12,7 +12,7 @@ options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
 source("file-setup.R")
 source("graph-alteration.R")
-# source("graph-analysis.R")
+source("graph-analysis.R")
 
 shinyServer(function(input, output, session) {
   # ----------------------------------------------- Global Variables --------------------------------------------------#
@@ -124,13 +124,6 @@ shinyServer(function(input, output, session) {
        }
      return(altered.sample.data)
    })
-
-   current_average_data <- reactive({
-     if (is.null(curr.scan.state)) {
-       return(NULL)
-     }
-     averageScans(curr.scan.state)
-   })
    
    observeEvent(input$scansData, {
      toggle("scan-interactions")
@@ -146,12 +139,11 @@ shinyServer(function(input, output, session) {
    }, once = TRUE)
    
    # Generates average scan file to be returned through download button
+   # File name of average scans file should be {original file name}_average_scans.csv
    output$averageScans <- downloadHandler(
-     filename = function() {
-       paste("average-scans", '.csv', sep='')
-     },
+     filename = function() { paste(gsub("\\..*","",input$scansData), "_average_scans", '.csv', sep='') },
      content = function(file) {
-       write.csv(getAverageScans(scans.data()), file)
+       write.csv(getAverageScans(scans.data()), file, row.names = FALSE)
      })
    
    output$removeScans <- renderUI({
