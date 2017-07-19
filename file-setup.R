@@ -77,25 +77,19 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
     # Updates index so the next set of scans can be retrieved
     scan.index <- scan.index + 4  
   }
-  
+
   # Set the names of the sample data frames
   # If sparklink file was provided, get names from sparklink file. Else, set to default.
   if (!(is.null(raw.sparklink.file))) {
     sample.names <- as.data.frame(raw.sparklink.file[,3], stringsAsFactors = FALSE)
-    sample.size.difference <- nrow(sample.times) - nrow(sample.names)
-    if (nrow(sample.names) < nrow(sample.tihumes)) {
+    sample.size.difference <- length(scan.graph.data) - nrow(sample.names)
+    if (nrow(sample.names) < length(scan.graph.data)) {
       sample.names <- rbind(sample.names, 
                             c(paste0("unlabeled sample ", 
                                      nrow(sample.names):
                                      nrow(sample.names) + sample.size.difference)))
     }
-    sample.names <- rbind(sample.names.first.row, sample.names.other.rows)
-   # print(length(sample.names))
-  #  print(length(scan.graph.data))
-    
-    
     names(scan.graph.data) <- sample.names[,1]
-  
   } else {
     names(scan.graph.data) <- c(paste0("sample ", 1:length(scan.graph.data)))
   }
