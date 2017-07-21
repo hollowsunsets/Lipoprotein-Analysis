@@ -59,8 +59,12 @@ scan.plot <- ggplot(data=curr.scan.state, aes(sample.diameters)) +
   ggtitle(paste0(input$sampleSelect)) + 
   theme(plot.title = element_text(hjust = 0.5))
 
-selected.scan.data <- curr.scan.state
+selected.scan.data <- graph.data[[47]]
+selected.scan.data <- selected.scan.data[complete.cases(selected.scan.data),]
 
+selected.scan.data <- applyLoessSmooth(selected.scan.data, 0.05)
+
+selected.scan.data <- test.loess
 
 scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series')
 scan.plot.data <- scan.plot.data %>% 
@@ -68,12 +72,17 @@ scan.plot.data <- scan.plot.data %>%
 # scan.plot.data$marked <- as.numeric(scan.plot.data$marked) + 0.25
 # scan.plot.data$marked[scan.plot.data$marked != 1.25] <- scan.plot.data$marked[scan.plot.data$marked != 1.25] + 0.75
 
-
+# Steps:
+## For marked: Pull out all of the bad data
+## Melt the rest of the data normally
+## Plot the lines separately 
 scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
-  geom_line(aes(colour = series, size = marked)) +
+  geom_line(aes(colour = series)) +
   scale_size_manual(values = c(0.1, 1.5)) +
   xlab("Diameters (nm)") +
   ylab("Concentration (dN#/cm^2)")
+
+
 scan.plot
 
 # idea - store two sets of data that will be mapped based on whether or not the user wants to see the visual distinguisher
@@ -95,3 +104,19 @@ amp.plot <- ggplot(data = selected.amp.data) +
                 theme(plot.title = element_text(hjust = 0.5))
 
 amp.plot
+
+raw.scans.data <- selected.scan.data
+test.loess <- loessTest(raw.scans.data, 0.05)
+test.loess2 <- applyLoessSmooth(raw.scans.data, 0.05)
+
+loessTest <- function(raw.scans.data, smoothing.span) {
+  curr.scan.state <- raw.scans.data[complete.cases(raw.scans.data),]
+  loess.index <- 0
+  loess.result <-data.frame(
+    scan1 = predict(loess(curr.scan.state[,loess.index + 1]~sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan2 = predict(loess(curr.scan.state[,loess.index + 2]~sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan3 = predict(loess(curr.scan.state[,loess.index + 3]~sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan4 = predict(loess(curr.scan.state[,loess.index + 4]~sample.diameters, curr.scan.state, span = smoothing.span))
+  )
+  loess.result <- loess.result %>% mutate("sample.diameters" = curr.scan.state$sample.diameters)
+}

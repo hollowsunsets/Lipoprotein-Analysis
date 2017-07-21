@@ -1,3 +1,6 @@
+
+
+graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
 # Assumes a format of the following: 
 # sample 1: scan1, scan2, scan3, scan4, sample.diameters
 # Returns a collection of scans that are measured to be significantly different
@@ -7,6 +10,7 @@
 # Possible thing to consider: Printing the similarity metric if the scan is found to be bad, 
 # so Carissa and Jake can know that one is especially important
 current.graph.data <- graph.data[[42]]
+
 findDissimilarScan <- function(current.graph.data) {
   current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
   
@@ -21,20 +25,18 @@ findDissimilarScan <- function(current.graph.data) {
   
   scan.area.mean <- (scan.area1 + scan.area2 + scan.area3 + scan.area4)/4
   
-  similarity.metric <- min(scan.area4, scan.area.mean)/ max(scan.area4, scan.area.mean)
-  
-  
-  
-  min(scan.area1, scan.area2)/ max(scan.area1, scan.area2)
-  min(scan.area1, scan.area4)/ max(scan.area1, scan.area4)
+  similarity.metric1 <- findSimilarity(scan.area.mean, scan.area1)
+  similarity.metric2 <- findSimilarity(scan.area.mean, scan.area2)
+  similarity.metric3 <- findSimilarity(scan.area.mean, scan.area3)
+  similarity.metric4 <- findSimilarity(scan.area.mean, scan.area4)
   return("None")
 }
 
 # Computes the similarity between two numbers, and returns a number representing a metric
 # that indicates the level of similarity, with 100 being a perfect match, and numbers closer
 # to 0 being extremely dissimilar.
-findSimilarity <- function() {
-  
+findSimilarity <- function(first.number, second.number) {
+  return(min(first.number, second.number)/max(first.number, second.number))
 }
 
 # Assumed data input format is the returned format from scanGraphData(). 

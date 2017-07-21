@@ -68,23 +68,38 @@ calcSSE <- function(data.set, y.axis){
   return(sse)
 }
 
-applyLoessSmooth <- function(raw.data, smoothing.span) {
-  curr.scan.state <- raw.data[complete.cases(raw.data),]
-  ## response
-  vars <- colnames(curr.scan.state)
-  ## covariate
-  id <- 1:nrow(curr.scan.state)
-  
 
-  ## define a loess filter function (fitting loess regression line)
-  loess.filter <- function (x, span) loess(formula = paste(x, "id", sep = "~"),
-                                           data = curr.scan.state,
-                                           degree = 1,
-                                           span = span, na.action=na.omit)$fitted 
-  ## apply filter column-by-column
-  loess.graph.data <- as.data.frame(lapply(vars, loess.filter, span = smoothing.span),
-                                    col.names = colnames(curr.scan.state))
-  sample.rows <- length(loess.graph.data[,1])
-  loess.graph.data <- loess.graph.data %>% mutate("sample.diameters" = curr.scan.state$sample.diameters[1:sample.rows]) 
+
+applyLoessSmooth <- function(raw.scans.data, smoothing.span) {
+  curr.scan.state <- raw.scans.data[complete.cases(raw.scans.data),]
+  loess.index <- 0
+  loess.result <-data.frame(
+    scan1 = predict(loess(curr.scan.state[,loess.index + 1]~sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan2 = predict(loess(curr.scan.state[,loess.index + 2]~sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan3 = predict(loess(curr.scan.state[,loess.index + 3]~sample.diameters, curr.scan.state, span = smoothing.span)),
+    scan4 = predict(loess(curr.scan.state[,loess.index + 4]~sample.diameters, curr.scan.state, span = smoothing.span))
+  )
+  loess.result <- loess.result %>% mutate("sample.diameters" = curr.scan.state$sample.diameters)
 }
 
+
+# applyLoessSmooth <- function(raw.data, smoothing.span) {
+#   curr.scan.state <- raw.data[complete.cases(raw.data),]
+#   ## response
+#   vars <- colnames(curr.scan.state)
+#   ## covariate
+#   id <- 1:nrow(curr.scan.state)
+#   
+# 
+#   ## define a loess filter function (fitting loess regression line)
+#   loess.filter <- function (x, span) loess(formula = paste(x, "id", sep = "~"),
+#                                            data = curr.scan.state,
+#                                            degree = 1,
+#                                            span = span, na.action=na.omit)$fitted 
+#   ## apply filter column-by-column
+#   loess.graph.data <- as.data.frame(lapply(vars, loess.filter, span = smoothing.span),
+#                                     col.names = colnames(curr.scan.state))
+#   sample.rows <- length(loess.graph.data[,1])
+#   loess.graph.data <- loess.graph.data %>% mutate("sample.diameters" = curr.scan.state$sample.diameters[1:sample.rows]) 
+# }
+# 
