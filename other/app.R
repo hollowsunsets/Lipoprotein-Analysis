@@ -330,9 +330,9 @@ server <- function(input, output) {
   })
   
   scan_conform7_10<- reactive({
-    result <- compute_graphs()
+    result <- compute_graphs() # contains all of the sample data, split into data frames
     loess7_10 <- result[[as.numeric(input$sampleId)]][(result[[as.numeric(input$sampleId)]]$diameter>7) & (result[[as.numeric(input$sampleId)]]$diameter<10),]
-    
+    # gets the current dataset (selected by the user) and selects only the datapoints contained within the diameter 7 and the diameter 10
     loess7_10$scan3 <- loess7_10$scan3 * 1.07
     loess7_10$scan4 <- loess7_10$scan4 * 1.07
     max_index = which.max(c(max(loess7_10$scan1),max(loess7_10$scan2),max(loess7_10$scan3),max(loess7_10$scan4)))

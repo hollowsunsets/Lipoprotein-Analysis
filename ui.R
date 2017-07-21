@@ -34,6 +34,7 @@ shinyUI(fluidPage(
             uiOutput("smoothControl"),
             uiOutput("removeScans"),
             uiOutput("addScans"),
+            uiOutput("scanSimilarity"),
             downloadButton("averageScans", label = "Get Average Scans"))
         ),
       hidden(

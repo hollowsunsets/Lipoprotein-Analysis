@@ -6,7 +6,7 @@ library(ggplot2)
 library(reshape2)
 library(readxl)
 library(lubridate)
-
+library(pracma)
 
 options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
@@ -172,10 +172,14 @@ shinyServer(function(input, output, session) {
      tagList(
         p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
         p("i.e: 0.10 = 10% smoothing span"),
-        textInput("customSmooth", "Enter Smoothing Span", "0.05")
+        textInput("customSmooth", "Enter Graph Smoothing Span", "0.05")
      )
    })
    
+   output$scanSimilarity <- renderUI({
+     checkboxInput("showDissimilarScan", label = "Show Scan Dissimilarity",
+                   value = TRUE)
+   })
    
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
@@ -208,7 +212,10 @@ shinyServer(function(input, output, session) {
      print(is.null(input$timeControls))
      if (timeControlsEnabled) {
        print("Time controls are enabled. Amp graph will be set to user input.")
+       print("Printing time control and time controls start and end times.")
        print(input$timeControl)
+       print(input$timeControl[[1]])
+       print(input$timeControl[[2]])
        altered.amp.data <- intervalAmperageData(altered.amp.data,
                                                 input$timeControl[[1]],
                                                 input$timeControl[[2]])
@@ -251,14 +258,27 @@ shinyServer(function(input, output, session) {
    
    output$scanPlot <- renderPlot({
      selected.scan.data <- current_scan_data()
+     
      if (!is.null(input$scansData) && !is.null(selected.scan.data)) { # If the scans file was provided, then plot will be generated
-      scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series') 
-      scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
-         geom_line(aes(colour = series)) +
-         xlab("Diameters (nm)") +
-         ylab("Concentration (dN#/cm^2)") +
-         ggtitle(paste0(input$sampleSelect)) + 
+      # Reshapes the data such that all of the mapped values are in one column - this makes it so the ggplot2
+      # calls do not have to be hardcoded for four scans
+      scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series')
+      if (input$showDissimilarScan) {
+        scan.plot.data <- scan.plot.data %>% mutate("marked" = (scan.plot.data$series == findDissimilarScan(selected.scan.data)))
+        scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
+          geom_line(aes(colour = series, size = marked)) +
+          scale_size_manual(values = c(0.1, 1.5)) +
+          xlab("Diameters (nm)") +
+          ylab("Concentration (dN#/cm^2)") +
             theme(plot.title = element_text(hjust = 0.5)) # Centers graph title
+      } else {
+        scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
+           geom_line(aes(colour = series)) +
+           xlab("Diameters (nm)") +
+           ylab("Concentration (dN#/cm^2)") +
+           ggtitle(paste0(input$sampleSelect)) + 
+              theme(plot.title = element_text(hjust = 0.5)) # Centers graph title
+      }
        return(scan.plot)
      } else {
        return(NULL)
@@ -276,9 +296,6 @@ shinyServer(function(input, output, session) {
      print(!is.null(input$amplogData) && !is.null(selected.amp.data))
      if (!is.null(input$amplogData) && !is.null(selected.amp.data)) {
        print("All components for the graph are present.")
-       print(format(selected.amp.data$X0[[1]], usetz=TRUE, tz="Etc/GMT+8"))
-       print(format(tail(selected.amp.data$X0, n = 1), usetz=TRUE, tz="Etc/GMT+8"))
-       fuck.you.r <- "this graph is shit"
        amp.plot.subtitle <- paste0("From ", format(selected.amp.data$X0[[1]], usetz=TRUE, tz="Etc/GMT+8"),
                               " to ", format(tail(selected.amp.data$X0, n = 1), usetz=TRUE, tz="Etc/GMT+8"))
        amp.plot <- ggplot(data = selected.amp.data) +

@@ -184,6 +184,11 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
   # Calculates the time interval which will represent the range of amperage data that will be graphed.
   # Time interval is set to +/- 3 minutes for improved graph readability and to catch times that are not an exact match.
   # i.e, cases where start time is 12:15:30, amperage time is 12:15:29
+  print("Printing start and end times, and adjusted start and end times.")
+  print(start.time)
+  print(end.time)
+  print(start.time - (3 * 60))
+  print(end.time + (3 * 60))
   selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
   
   # Selects the times from the data that are contained within the previously calculated time interval.

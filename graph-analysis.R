@@ -1,31 +1,41 @@
-graphPairIsSimilar <- function(graph.data1.x, graph.data1.y, graph.data2.x, graph.data2.y) {
-  # Calculate integral between the two graphs
-  # If sum of area is > var, then return true. Else, return false.
+# Assumes a format of the following: 
+# sample 1: scan1, scan2, scan3, scan4, sample.diameters
+# Returns a collection of scans that are measured to be significantly different
+# from each other (if any), based on the trapezoidal approximation of the graph area.\
+
+# Test: Sample 10, 12, 16 17, 18, 42
+# Possible thing to consider: Printing the similarity metric if the scan is found to be bad, 
+# so Carissa and Jake can know that one is especially important
+current.graph.data <- graph.data[[42]]
+findDissimilarScan <- function(current.graph.data) {
+  current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
+  
+  # Steps:
+  ## Compute the area beneath the graphs for each dataset.
+  ## Compute the similarity 
+  
+  scan.area1 <- trapz(current.graph.data$sample.diameters, current.graph.data$scan1)
+  scan.area2 <- trapz(current.graph.data$sample.diameters, current.graph.data$scan2)
+  scan.area3 <- trapz(current.graph.data$sample.diameters, current.graph.data$scan3)
+  scan.area4 <- trapz(current.graph.data$sample.diameters, current.graph.data$scan4)
+  
+  scan.area.mean <- (scan.area1 + scan.area2 + scan.area3 + scan.area4)/4
+  
+  similarity.metric <- min(scan.area4, scan.area.mean)/ max(scan.area4, scan.area.mean)
+  
+  
+  
+  min(scan.area1, scan.area2)/ max(scan.area1, scan.area2)
+  min(scan.area1, scan.area4)/ max(scan.area1, scan.area4)
+  return("None")
 }
 
-graphSetIsSimilar <- function(graph.data1.x, graph.data2.y, ...) { # ... operator is only useful for other functions 
-  return(graphPairIsSimilar(...))
+# Computes the similarity between two numbers, and returns a number representing a metric
+# that indicates the level of similarity, with 100 being a perfect match, and numbers closer
+# to 0 being extremely dissimilar.
+findSimilarity <- function() {
+  
 }
-
-# NOTE: Deleted findGraphPeak. This is easy to do with dplyr. Add annotations on with plot_ly.
-# See following link for example: https://moderndata.plot.ly/interactive-r-visualizations-with-d3-ggplot2-rstudio/
-
-
-
-
-#graph.data <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
-#test.graph.data <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors = FALSE), 
-                                # read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE))
-#sample.names <- read.csv("data\\SparkRunlistDataset2.csv", stringsAsFactors = FALSE) 
-#sample.names <- sample.names %>% select(Sample.Name)
-#names(graph.data)
-
-
-
-# sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
-# test2 <- getAverageScans(graph.data)
-# graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
-
 
 # Assumed data input format is the returned format from scanGraphData(). 
 # Generates the averaged dataset which contains the averaged values from the 4 visualized scans for each sample.
@@ -37,7 +47,8 @@ getAverageScans <- function(graph.data, sparklink.file = NULL) {
   # Remove any columns that contain NA values that may have resulted from given files having irregular sizes (i.e, 46 labels for 47 scans)
   avg.scans <- avg.scans[ , colSums(is.na(avg.scans)) == 0]
 
-  # If a Sparklink file was provided, add sample names. 
+  # If a Sparklink file was provided, add sample name, diameters and the corresponding
+  # inj labels.
   if (!is.null(sparklink.file)) {
     sample.names <- rbind(c("Sample Name", sparklink.file[,4]))
     sample.size.difference <- (length(graph.data) + 1) - length(sample.names)
@@ -52,12 +63,11 @@ getAverageScans <- function(graph.data, sparklink.file = NULL) {
     avg.scans <- avg.scans %>%
       rbind(c("Diameter", paste0("inj", 1:(ncol(avg.scans) - 1))))
   } else {
+    # Otherwise, only add the diameters and inj labels.
     avg.scans <- avg.scans %>%
       rbind(c("Diameter", paste0("inj", 1:(length(avg.scans) - 1))))
   }
   
-  # Add a row containing the "Diameter" and matching "inj" labels for each sample
-
   avg.scans <- as.data.frame(avg.scans, stringsAsFactors = FALSE)
     if (!is.null(graph.data)) {
       # Retrieves the diameters from the first set of sample data. The diameters should be the same for every dataset.

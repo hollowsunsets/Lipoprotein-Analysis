@@ -3,15 +3,23 @@ library(readxl)
 library(plotly)
 library(ggplot2)
 library(ggvis)
-
+library(pracma)
 
 # read.xlsx is super slow. Perhaps only read in a subset?
 test2 <- ampGraphData(read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
 test2 <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
 test3 <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))
 
+graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
+scan.test <- graph.data[[1]]
+scan.test <- scan.test[complete.cases(scan.test),]
 
+val1 <- trapz(scan.test$sample.diameters, scan.test$scan1)
+val2 <- trapz(scan.test$sample.diameters, scan.test$scan2)
+val3 <- trapz(scan.test$sample.diameters, scan.test$scan3)
+val4 <- trapz(scan.test$sample.diameters, scan.test$scan4)
 
+avg <- mean(val1, val2, val3, val4, na.rm = FALSE)
 start.time <- test2[[1]][[1]]
 end.time <- test2[[1]][[200]]
 selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
@@ -50,6 +58,27 @@ scan.plot <- ggplot(data=curr.scan.state, aes(sample.diameters)) +
   ylab("Concentration (dN#/cm^2)") +
   ggtitle(paste0(input$sampleSelect)) + 
   theme(plot.title = element_text(hjust = 0.5))
+
+selected.scan.data <- curr.scan.state
+
+
+scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series')
+scan.plot.data <- scan.plot.data %>% 
+  mutate("marked" = (scan.plot.data$series == "scan2"))
+# scan.plot.data$marked <- as.numeric(scan.plot.data$marked) + 0.25
+# scan.plot.data$marked[scan.plot.data$marked != 1.25] <- scan.plot.data$marked[scan.plot.data$marked != 1.25] + 0.75
+
+
+scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
+  geom_line(aes(colour = series, size = marked)) +
+  scale_size_manual(values = c(0.1, 1.5)) +
+  xlab("Diameters (nm)") +
+  ylab("Concentration (dN#/cm^2)")
+scan.plot
+
+# idea - store two sets of data that will be mapped based on whether or not the user wants to see the visual distinguisher
+    ## also include ability to remove or add back scans
+    ## include ability to do this only for 
 
 test2 <- test2 %>% filter()
 
