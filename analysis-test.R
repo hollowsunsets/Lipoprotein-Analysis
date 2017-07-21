@@ -5,14 +5,12 @@ library(ggplot2)
 library(ggvis)
 library(pracma)
 
-# read.xlsx is super slow. Perhaps only read in a subset?
 test2 <- ampGraphData(read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
 test2 <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
 test3 <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))
 
 graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
-scan.test <- graph.data[[1]]
-scan.test <- scan.test[complete.cases(scan.test),]
+
 
 val1 <- trapz(scan.test$sample.diameters, scan.test$scan1)
 val2 <- trapz(scan.test$sample.diameters, scan.test$scan2)
@@ -20,44 +18,6 @@ val3 <- trapz(scan.test$sample.diameters, scan.test$scan3)
 val4 <- trapz(scan.test$sample.diameters, scan.test$scan4)
 
 avg <- mean(val1, val2, val3, val4, na.rm = FALSE)
-start.time <- test2[[1]][[1]]
-end.time <- test2[[1]][[200]]
-selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
-
-test2.contained <- test2$X0 %within% selected.interval
-
-test2.times <- as.vector(test2[,1])
-
-final.times <- test2.times[test2.contained[test2.contained == TRUE]]
-
-selected.amp.times <- amp.graph.data[,1][amp.graph.data$X0 %within% selected.interval]
-
-
-xl_test <- read_excel("data\\170622_Study114_Amplog.xlsx", col_names = FALSE)
-xl_test <- xl_test[complete.cases(xl_test),]
-tail.test <- tail(xl_test$X0, n = 1)
-  
-scan.data.test <- test2[,1:6]
-scan.data.test2 <- test3[,1:6]
-
-test3$`sample 1`
-
-test4 <- test3$`sample 1`
-# TO-DO:
-# Test multi-line plots on plotly
-# Create average data function
-
-foo <- input_slider(6, 24, c(1,6))
-
-scan.plot <- ggplot(data=curr.scan.state, aes(sample.diameters)) + 
-  geom_line(aes(color="scan 1",y=curr.scan.state[[1]])) + 
-  geom_line(aes(color="scan 2",y=curr.scan.state[[2]])) + 
-  geom_line(aes(color="scan 3",y=curr.scan.state[[3]])) +
-  geom_line(aes(color="scan 4",y=curr.scan.state[[4]])) + 
-  xlab("Diameters (nm)") +
-  ylab("Concentration (dN#/cm^2)") +
-  ggtitle(paste0(input$sampleSelect)) + 
-  theme(plot.title = element_text(hjust = 0.5))
 
 selected.scan.data <- graph.data[[47]]
 selected.scan.data <- selected.scan.data[complete.cases(selected.scan.data),]
@@ -69,8 +29,7 @@ selected.scan.data <- test.loess
 scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series')
 scan.plot.data <- scan.plot.data %>% 
   mutate("marked" = (scan.plot.data$series == "scan2"))
-# scan.plot.data$marked <- as.numeric(scan.plot.data$marked) + 0.25
-# scan.plot.data$marked[scan.plot.data$marked != 1.25] <- scan.plot.data$marked[scan.plot.data$marked != 1.25] + 0.75
+
 
 # Steps:
 ## For marked: Pull out all of the bad data
@@ -89,11 +48,6 @@ scan.plot
     ## also include ability to remove or add back scans
     ## include ability to do this only for 
 
-test2 <- test2 %>% filter()
-
-na.omit(test2) %>%
-  ggvis() %>%
-    layer_paths(~X1, ~X3)
 selected.amp.data
 
 amp.plot <- ggplot(data = selected.amp.data) +
@@ -105,18 +59,3 @@ amp.plot <- ggplot(data = selected.amp.data) +
 
 amp.plot
 
-raw.scans.data <- selected.scan.data
-test.loess <- loessTest(raw.scans.data, 0.05)
-test.loess2 <- applyLoessSmooth(raw.scans.data, 0.05)
-
-loessTest <- function(raw.scans.data, smoothing.span) {
-  curr.scan.state <- raw.scans.data[complete.cases(raw.scans.data),]
-  loess.index <- 0
-  loess.result <-data.frame(
-    scan1 = predict(loess(curr.scan.state[,loess.index + 1]~sample.diameters, curr.scan.state, span = smoothing.span)),
-    scan2 = predict(loess(curr.scan.state[,loess.index + 2]~sample.diameters, curr.scan.state, span = smoothing.span)),
-    scan3 = predict(loess(curr.scan.state[,loess.index + 3]~sample.diameters, curr.scan.state, span = smoothing.span)),
-    scan4 = predict(loess(curr.scan.state[,loess.index + 4]~sample.diameters, curr.scan.state, span = smoothing.span))
-  )
-  loess.result <- loess.result %>% mutate("sample.diameters" = curr.scan.state$sample.diameters)
-}

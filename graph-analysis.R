@@ -1,3 +1,4 @@
+current.graph.data <- graph.data[[42]]
 
 
 graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
@@ -5,32 +6,46 @@ graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsF
 # sample 1: scan1, scan2, scan3, scan4, sample.diameters
 # Returns a collection of scans that are measured to be significantly different
 # from each other (if any), based on the trapezoidal approximation of the graph area.\
-
-# Test: Sample 10, 12, 16 17, 18, 42
-# Possible thing to consider: Printing the similarity metric if the scan is found to be bad, 
-# so Carissa and Jake can know that one is especially important
-current.graph.data <- graph.data[[42]]
-
 findDissimilarScan <- function(current.graph.data) {
+  badScans <- c()
+  
+  # Removes all NA values from the data frame
   current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
   
-  # Steps:
-  ## Compute the area beneath the graphs for each dataset.
-  ## Compute the similarity 
+  # Calculates the area under the curves of the scan datasets with a trapezoidal approximation
+  scan.areas <- lapply(names(current.graph.data[1:4]), 
+                      function(x) { trapz(current.graph.data$sample.diameters, 
+                                          as.numeric(unlist(current.graph.data[x]))) })
+  # Calculates the mean of the 4 scan areas
+  scan.area.mean <- mean(as.numeric(scan.areas), na.rm = FALSE)
   
-  scan.area1 <- trapz(current.graph.data$sample.diameters, current.graph.data$scan1)
-  scan.area2 <- trapz(current.graph.data$sample.diameters, current.graph.data$scan2)
-  scan.area3 <- trapz(current.graph.data$sample.diameters, current.graph.data$scan3)
-  scan.area4 <- trapz(current.graph.data$sample.diameters, current.graph.data$scan4)
+  # Calculates the similarity of the scan areas to the scan mean 
+  similarity.metrics <- lapply(seq_along(scan.areas), function(x) { findSimilarity(scan.areas[[x]], scan.area.mean) })
   
-  scan.area.mean <- (scan.area1 + scan.area2 + scan.area3 + scan.area4)/4
+  # Converts the similarity metrics list to a data frame, with the metrics in one column (for ease of access)
+  similarity.metrics <- do.call(rbind, lapply(similarity.metrics, data.frame, stringsAsFactors=FALSE))
   
-  similarity.metric1 <- findSimilarity(scan.area.mean, scan.area1)
-  similarity.metric2 <- findSimilarity(scan.area.mean, scan.area2)
-  similarity.metric3 <- findSimilarity(scan.area.mean, scan.area3)
-  similarity.metric4 <- findSimilarity(scan.area.mean, scan.area4)
-  return("None")
+  # Adds names to the similarity metrics dataframe so they can be accessed
+  similarity.metrics$scan.names <- names(current.graph.data[1:4])
+  
+  # Records the bad scans, if there are any.
+  for (i in 1:nrow(similarity.metrics)) {
+    if (similarity.metrics$X..i..[i] < 0.90) {
+      badScans <- c(similarity.metrics$scan.names[i], badScans)
+    }
+  }
+  
+  # If there are no bad scans, return a list containing "None" (assuming that the functions using this expect a list)
+  # Otherwise, return the list of bad scans.
+  if (is.null(badScans)) {
+    return(c("None"))
+  } else {
+    return(badScans)
+  }
 }
+
+
+
 
 # Computes the similarity between two numbers, and returns a number representing a metric
 # that indicates the level of similarity, with 100 being a perfect match, and numbers closer
