@@ -119,6 +119,8 @@ shinyServer(function(input, output, session) {
        # (i.e, graph.data$`std1`, which is the scan data for the std1 sample)
        if (!(is.null(selected.sample.data))) {
          if (!(is.null(input$customSmooth)) && input$customSmooth > 0.01) {
+            print("Loess smoothing should be applied now.....")
+            print(applyLoessSmooth(altered.sample.data, as.numeric(input$customSmooth)))
             altered.sample.data <- applyLoessSmooth(altered.sample.data, as.numeric(input$customSmooth))
          }
          if (input$scansToAdd != "None" && !is.null(input$scansToAdd)) {
@@ -258,20 +260,27 @@ shinyServer(function(input, output, session) {
    
    output$scanPlot <- renderPlot({
      selected.scan.data <- current_scan_data()
-     
-     if (!is.null(input$scansData) && !is.null(selected.scan.data)) { # If the scans file was provided, then plot will be generated
-      # Reshapes the data such that all of the mapped values are in one column - this makes it so the ggplot2
-      # calls do not have to be hardcoded for four scans
-      scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series')
+     if (!is.null(input$scansData) && !is.null(selected.scan.data)) { 
       if (input$showDissimilarScan) {
-        scan.plot.data <- scan.plot.data %>% mutate("marked" = (scan.plot.data$series == findDissimilarScan(selected.scan.data)))
+        # dissimilar.scans <- findDissimilarScan(selected.scan.data)
+        # 
+        # similar.plot.data <- selected.scan.data[, !names(selected.scan.data) %in% dissimilar.scans]
+        # 
+        # dissimilar.plot.data <- selected.scan.data[dissimilar.scans]
+        similar.plot.data <- selected.scan.data
+        scan.plot.data <- melt(similar.plot.data, id.vars = "sample.diameters", variable.name = 'series')
+        
         scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
-          geom_line(aes(colour = series, size = marked)) +
+          geom_line(aes(colour = series)) +
+         # geom_line(aes(colour = red)) + 
           scale_size_manual(values = c(0.1, 1.5)) +
           xlab("Diameters (nm)") +
           ylab("Concentration (dN#/cm^2)") +
             theme(plot.title = element_text(hjust = 0.5)) # Centers graph title
+        
       } else {
+        scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series')
+        
         scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
            geom_line(aes(colour = series)) +
            xlab("Diameters (nm)") +

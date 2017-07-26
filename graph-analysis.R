@@ -1,11 +1,13 @@
 current.graph.data <- graph.data[[42]]
-
+test <- dput(current.graph.data)
 
 graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
+
+
 # Assumes a format of the following: 
 # sample 1: scan1, scan2, scan3, scan4, sample.diameters
 # Returns a collection of scans that are measured to be significantly different
-# from each other (if any), based on the trapezoidal approximation of the graph area.\
+# from each other (if any), based on the trapezoidal approximation of the graph area.
 findDissimilarScan <- function(current.graph.data) {
   badScans <- c()
   
@@ -34,11 +36,11 @@ findDissimilarScan <- function(current.graph.data) {
       badScans <- c(similarity.metrics$scan.names[i], badScans)
     }
   }
-  
+  print(similarity.metrics)
   # If there are no bad scans, return a list containing "None" (assuming that the functions using this expect a list)
   # Otherwise, return the list of bad scans.
   if (is.null(badScans)) {
-    return(c("None"))
+    return("")
   } else {
     return(badScans)
   }

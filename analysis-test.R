@@ -19,28 +19,33 @@ val4 <- trapz(scan.test$sample.diameters, scan.test$scan4)
 
 avg <- mean(val1, val2, val3, val4, na.rm = FALSE)
 
-selected.scan.data <- graph.data[[47]]
-selected.scan.data <- selected.scan.data[complete.cases(selected.scan.data),]
+selected.scan.data <- applyLoessSmooth(graph.data[[42]], 0.05)
 
-selected.scan.data <- applyLoessSmooth(selected.scan.data, 0.05)
+dissimilar.scans <- findDissimilarScan(selected.scan.data)
 
-selected.scan.data <- test.loess
+similar.plot.data <- selected.scan.data[, !names(selected.scan.data) %in% dissimilar.scans]
 
-scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series')
-scan.plot.data <- scan.plot.data %>% 
-  mutate("marked" = (scan.plot.data$series == "scan2"))
+dissimilar.plot.data <- selected.scan.data[dissimilar.scans]
+
+dissimilar.plot.data <- cbind(dissimilar.plot.data, "sample.diameters" = selected.scan.data$sample.diameters)
+
+scan.plot.data <- melt(similar.plot.data, id.vars = "sample.diameters", variable.name = 'series')
+scan.plot.data.2 <- melt(dissimilar.plot.data, id.vars = "sample.diameters", variable.name = 'series2')
+
 
 
 # Steps:
 ## For marked: Pull out all of the bad data
 ## Melt the rest of the data normally
 ## Plot the lines separately 
-scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
-  geom_line(aes(colour = series)) +
-  scale_size_manual(values = c(0.1, 1.5)) +
-  xlab("Diameters (nm)") +
-  ylab("Concentration (dN#/cm^2)")
 
+scan.plot <- ggplot(NULL, aes(sample.diameters, value)) +
+  geom_line(data = scan.plot.data, aes(colour = "green")) +
+  geom_line(data = scan.plot.data.2, aes(colour = "red")) +
+  scale_colour_identity(guide="legend",breaks=cols_hex) +
+  xlab("Diameters (nm)") +
+  ylab("Concentration (dN#/cm^2)") +
+  theme(plot.title = element_text(hjust = 0.5)) # Centers graph title
 
 scan.plot
 
