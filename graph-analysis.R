@@ -8,43 +8,44 @@ graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsF
 # sample 1: scan1, scan2, scan3, scan4, sample.diameters
 # Returns a collection of scans that are measured to be significantly different
 # from each other (if any), based on the trapezoidal approximation of the graph area.
-findDissimilarScan <- function(current.graph.data) {
-  badScans <- c()
-  
-  # Removes all NA values from the data frame
-  current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
-  
-  # Calculates the area under the curves of the scan datasets with a trapezoidal approximation
-  scan.areas <- lapply(names(current.graph.data[1:4]), 
-                      function(x) { trapz(current.graph.data$sample.diameters, 
-                                          as.numeric(unlist(current.graph.data[x]))) })
-  # Calculates the mean of the 4 scan areas
-  scan.area.mean <- mean(as.numeric(scan.areas), na.rm = FALSE)
-  
-  # Calculates the similarity of the scan areas to the scan mean 
-  similarity.metrics <- lapply(seq_along(scan.areas), function(x) { findSimilarity(scan.areas[[x]], scan.area.mean) })
-  
-  # Converts the similarity metrics list to a data frame, with the metrics in one column (for ease of access)
-  similarity.metrics <- do.call(rbind, lapply(similarity.metrics, data.frame, stringsAsFactors=FALSE))
-  
-  # Adds names to the similarity metrics dataframe so they can be accessed
-  similarity.metrics$scan.names <- names(current.graph.data[1:4])
-  
-  # Records the bad scans, if there are any.
-  for (i in 1:nrow(similarity.metrics)) {
-    if (similarity.metrics$X..i..[i] < 0.90) {
-      badScans <- c(similarity.metrics$scan.names[i], badScans)
-    }
-  }
-  print(similarity.metrics)
-  # If there are no bad scans, return a list containing "None" (assuming that the functions using this expect a list)
-  # Otherwise, return the list of bad scans.
-  if (is.null(badScans)) {
-    return("")
-  } else {
-    return(badScans)
-  }
-}
+current.graph.data  <- applyLoessSmooth(graph.data[[12]], 0.05)
+# findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
+#   badScans <- c()
+#   
+#   # Removes all NA values from the data frame
+#   current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
+#   
+#   # Calculates the area under the curves of the scan datasets with a trapezoidal approximation
+#   scan.areas <- lapply(names(current.graph.data[1:4]), 
+#                       function(x) { trapz(current.graph.data$sample.diameters, 
+#                                           as.numeric(unlist(current.graph.data[x]))) })
+#   
+#   # Calculates the similarity of the scan areas to the scan mean 
+#   similarity.metrics <- lapply(seq_along(scan.areas), function(x) { mean(sapply(seq_along(scan.areas[-x]), 
+#                                                                        function(y){ findSimilarity(scan.areas[[x]], scan.areas[-x][[y]]) })) })
+#  # scan.area.mean <- mean(as.numeric(scan.areas), na.rm = FALSE)
+# 
+#   # Converts the similarity metrics list to a data frame, with the metrics in one column (for ease of access)
+#   similarity.metrics <- do.call(rbind, lapply(similarity.metrics, data.frame, stringsAsFactors=FALSE))
+#   
+#   # Adds names to the similarity metrics dataframe so they can be accessed
+#   similarity.metrics$scan.names <- names(current.graph.data[1:4])
+#   
+#   # Records the bad scans, if there are any.
+#   for (i in 1:nrow(similarity.metrics)) {
+#     if (similarity.metrics$X..i..[i] < difference.tolerance) {
+#       badScans <- c(similarity.metrics$scan.names[i], badScans)
+#     }
+#   }
+#   print(similarity.metrics)
+#   # If there are no bad scans, return a list containing "None" (assuming that the functions using this expect a list)
+#   # Otherwise, return the list of bad scans.
+#   if (is.null(badScans)) {
+#     return(c(""))
+#   } else {
+#     return(badScans)
+#   }
+# }
 
 
 
