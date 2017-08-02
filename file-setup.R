@@ -39,7 +39,7 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   filtered.scans <- nthDelete(filtered.scans, 5, 1)
   
   # Converts data frames to numeric matrix to allow binary operations (limitation of R)
-  filtered.scans <- (as.data.frame(lapply(filtered.scans, as.numeric)))
+  filtered.scans <- (as.data.frame(lapply(filtered.scans, as.numeric))) 
   diameters <- (as.data.frame(lapply(diameters, as.numeric)))
   
   # Apply formula to scan data 
@@ -184,11 +184,6 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
   # Calculates the time interval which will represent the range of amperage data that will be graphed.
   # Time interval is set to +/- 3 minutes for improved graph readability and to catch times that are not an exact match.
   # i.e, cases where start time is 12:15:30, amperage time is 12:15:29
-  print("Printing start and end times, and adjusted start and end times.")
-  print(start.time)
-  print(end.time)
-  print(start.time - (3 * 60))
-  print(end.time + (3 * 60))
   selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
   
   # Selects the times from the data that are contained within the previously calculated time interval.
@@ -198,6 +193,8 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
   selected.amp.data <- inner_join(selected.amp.times, amp.graph.data, by = "X0")
   return(selected.amp.data)
 }
+
+
 
 # Deletes every nth column in the given data frame, beginning from the 
 # given starting index, i. 

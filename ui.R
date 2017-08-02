@@ -29,9 +29,11 @@ shinyUI(fluidPage(
       hidden(
         div(id = "scan-interactions", 
             h3("Scan Graph Interactions"),
-            p("Choose a subset of scan data that you wish to visualize."),
             uiOutput("sampleControl"),
             uiOutput("smoothControl"),
+            p(""),
+            uiOutput("toggleScanFlag"),
+            p(""),
             uiOutput("removeScans"),
             uiOutput("addScans"),
             uiOutput("scanSimilarity"),

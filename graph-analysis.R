@@ -1,51 +1,44 @@
-current.graph.data <- graph.data[[42]]
-test <- dput(current.graph.data)
-
-graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
-
-
 # Assumes a format of the following: 
 # sample 1: scan1, scan2, scan3, scan4, sample.diameters
 # Returns a collection of scans that are measured to be significantly different
 # from each other (if any), based on the trapezoidal approximation of the graph area.
-current.graph.data  <- applyLoessSmooth(graph.data[[12]], 0.05)
-# findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
-#   badScans <- c()
-#   
-#   # Removes all NA values from the data frame
-#   current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
-#   
-#   # Calculates the area under the curves of the scan datasets with a trapezoidal approximation
-#   scan.areas <- lapply(names(current.graph.data[1:4]), 
-#                       function(x) { trapz(current.graph.data$sample.diameters, 
-#                                           as.numeric(unlist(current.graph.data[x]))) })
-#   
-#   # Calculates the similarity of the scan areas to the scan mean 
-#   similarity.metrics <- lapply(seq_along(scan.areas), function(x) { mean(sapply(seq_along(scan.areas[-x]), 
-#                                                                        function(y){ findSimilarity(scan.areas[[x]], scan.areas[-x][[y]]) })) })
-#  # scan.area.mean <- mean(as.numeric(scan.areas), na.rm = FALSE)
-# 
-#   # Converts the similarity metrics list to a data frame, with the metrics in one column (for ease of access)
-#   similarity.metrics <- do.call(rbind, lapply(similarity.metrics, data.frame, stringsAsFactors=FALSE))
-#   
-#   # Adds names to the similarity metrics dataframe so they can be accessed
-#   similarity.metrics$scan.names <- names(current.graph.data[1:4])
-#   
-#   # Records the bad scans, if there are any.
-#   for (i in 1:nrow(similarity.metrics)) {
-#     if (similarity.metrics$X..i..[i] < difference.tolerance) {
-#       badScans <- c(similarity.metrics$scan.names[i], badScans)
-#     }
-#   }
-#   print(similarity.metrics)
-#   # If there are no bad scans, return a list containing "None" (assuming that the functions using this expect a list)
-#   # Otherwise, return the list of bad scans.
-#   if (is.null(badScans)) {
-#     return(c(""))
-#   } else {
-#     return(badScans)
-#   }
-# }
+## Current Issues: What is an appropriate "difference tolerance"? What if the values are all extremely different from one another?
+### Things to remember: If more than one scan is bad, then provide a flag to remove the entire scan.
+findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
+  badScans <- c() # Default value of badScans is NULL
+
+  # Removes all NA values from the data frame
+  current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
+
+  # Calculates the area under the curves of the scan datasets with a trapezoidal approximation
+  scan.areas <- lapply(names(current.graph.data[1:4]),
+                      function(x) { trapz(current.graph.data$sample.diameters,
+                                          as.numeric(unlist(current.graph.data[x]))) })
+
+  # Calculates the similarity of the scan areas to the scan mean
+  similarity.metrics <- lapply(seq_along(scan.areas), function(x) { mean(sapply(seq_along(scan.areas[-x]),
+                                                                       function(y){ findSimilarity(scan.areas[[x]], scan.areas[-x][[y]]) })) })
+
+  # Converts the similarity metrics list to a data frame, with the metrics in one column (for ease of access)
+  similarity.metrics <- do.call(rbind, lapply(similarity.metrics, data.frame, stringsAsFactors=FALSE))
+
+  # Adds names to the similarity metrics dataframe so they can be accessed
+  similarity.metrics$scan.names <- names(current.graph.data[1:4])
+
+  # Records the bad scans, if there are any.
+  for (i in 1:nrow(similarity.metrics)) {
+    if (similarity.metrics$X..i..[i] < difference.tolerance) {
+      badScans <- c(similarity.metrics$scan.names[i], badScans)
+    }
+  }
+  # If there are no bad scans, return a list containing "None" (assuming that the functions using this expect a list)
+  # Otherwise, return the list of bad scans.
+  if (is.null(badScans)) {
+    return(c(""))
+  } else {
+    return(badScans)
+  }
+}
 
 
 
@@ -60,9 +53,22 @@ findSimilarity <- function(first.number, second.number) {
 # Assumed data input format is the returned format from scanGraphData(). 
 # Generates the averaged dataset which contains the averaged values from the 4 visualized scans for each sample.
 # Returns in the format of a dataframe.
-getAverageScans <- function(graph.data, sparklink.file = NULL) {
+# scan.flags <- integer(length(test.graph.data))
+# scan.flags <- rbind(scan.flags, names(test.graph.data))
+# 
+# scan.flags[which(scan.flags[2,] == "std 1")] <<- 1
+getAverageScans <- function(graph.data, sparklink.file = NULL, scan.flags = NULL) {
+  
+  if (!is.null(scan.flags)) {
+    avg.scans <- rbind(c("Scan Flag", scan.flags[1,]))
+  } else {
+    # Otherwise, flags are automatically set to 0 for every existing sample in the dataset.
+    avg.scans <- rbind(c("Scan Flag", integer(length(graph.data) - 1)))
+  }
+  
+  
   # Add the overall sample labels to the graph, which should have been generated already for the graph data
-  avg.scans <-  rbind(c("Sample Label", names(graph.data)))
+  avg.scans <-  avg.scans %>% rbind(c("Sample Label", names(graph.data)))
 
   # Remove any columns that contain NA values that may have resulted from given files having irregular sizes (i.e, 46 labels for 47 scans)
   avg.scans <- avg.scans[ , colSums(is.na(avg.scans)) == 0]
@@ -78,16 +84,14 @@ getAverageScans <- function(graph.data, sparklink.file = NULL) {
                                      length(sample.names):
                                      length(sample.names))))
     }
-    avg.scans <- avg.scans %>% 
-      rbind(sample.names)
-    avg.scans <- avg.scans %>%
-      rbind(c("Diameter", paste0("inj", 1:(ncol(avg.scans) - 1))))
+    avg.scans <- avg.scans %>% rbind(sample.names)
+    avg.scans <- avg.scans %>% rbind(c("Diameter", paste0("inj", 1:(ncol(avg.scans) - 1))))
   } else {
     # Otherwise, only add the diameters and inj labels.
-    avg.scans <- avg.scans %>%
-      rbind(c("Diameter", paste0("inj", 1:(length(avg.scans) - 1))))
+    avg.scans <- avg.scans %>% rbind(c("Diameter", paste0("inj", 1:(length(avg.scans) - 1))))
+    
   }
-  
+
   avg.scans <- as.data.frame(avg.scans, stringsAsFactors = FALSE)
     if (!is.null(graph.data)) {
       # Retrieves the diameters from the first set of sample data. The diameters should be the same for every dataset.

@@ -17,12 +17,26 @@ val2 <- trapz(scan.test$sample.diameters, scan.test$scan2)
 val3 <- trapz(scan.test$sample.diameters, scan.test$scan3)
 val4 <- trapz(scan.test$sample.diameters, scan.test$scan4)
 
+
+testIf <- function(n) {
+  if (n == 0) {
+    print('1')
+  }
+  if (n != 2) {
+    print('2')
+  }
+  if (n < 1) {
+    print('3')
+  }
+}
+
+testIf(0)
+
+
 avg <- mean(val1, val2, val3, val4, na.rm = FALSE)
 
 
-selected.scan.data <- applyLoessSmooth(graph.data[[42]], 0.05)
-
-dissimilar.scans <- findDissimilarScan(selected.scan.data)
+dissimilar.scans <- findDissimilarScan(loess.graph.data)
 
 # similar.plot.data <- selected.scan.data[, !names(selected.scan.data) %in% dissimilar.scans]
 
@@ -30,7 +44,7 @@ dissimilar.scans <- findDissimilarScan(selected.scan.data)
 
 # dissimilar.plot.data <- cbind(dissimilar.plot.data, "sample.diameters" = selected.scan.data$sample.diameters)
 
-scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'scans')
+scan.plot.data <- melt(loess.graph.data, id.vars = "sample.diameters", variable.name = 'scans')
 scan.plot.data <- scan.plot.data %>% mutate("dissimilar" = scan.plot.data$scans %in% dissimilar.scans)
   
 # Steps:
