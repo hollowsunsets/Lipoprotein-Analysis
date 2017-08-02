@@ -4,20 +4,26 @@
 # from each other (if any), based on the trapezoidal approximation of the graph area.
 ## Current Issues: What is an appropriate "difference tolerance"? What if the values are all extremely different from one another?
 ### Things to remember: If more than one scan is bad, then provide a flag to remove the entire scan.
+# current.graph.data <- graph.data[[17]]
+# difference.tolerance <- 0.90
 findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
   badScans <- c() # Default value of badScans is NULL
 
   # Removes all NA values from the data frame
   current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
-
-  # Calculates the area under the curves of the scan datasets with a trapezoidal approximation
-  scan.areas <- lapply(names(current.graph.data[1:4]),
+#   test<- c(max(current.graph.data$scan1), max(current.graph.data$scan2), max(current.graph.data$scan3),
+  #          max(current.graph.data$scan4))
+  # findSimilarity(test[3], test[4])
+ #  test2 <- test$residuals
+# 
+#   # Calculates the area under the curves of the scan datasets with a trapezoidal approximation
+   scan.areas <- lapply(names(current.graph.data[1:4]),
                       function(x) { trapz(current.graph.data$sample.diameters,
-                                          as.numeric(unlist(current.graph.data[x]))) })
-
-  # Calculates the similarity of the scan areas to the scan mean
+                                           as.numeric(unlist(current.graph.data[x]))) })
+# 
+#   # Calculates the similarity of the scan areas to the scan mean
   similarity.metrics <- lapply(seq_along(scan.areas), function(x) { mean(sapply(seq_along(scan.areas[-x]),
-                                                                       function(y){ findSimilarity(scan.areas[[x]], scan.areas[-x][[y]]) })) })
+                                                                        function(y){ findSimilarity(scan.areas[[x]], scan.areas[-x][[y]]) })) })
 
   # Converts the similarity metrics list to a data frame, with the metrics in one column (for ease of access)
   similarity.metrics <- do.call(rbind, lapply(similarity.metrics, data.frame, stringsAsFactors=FALSE))
@@ -50,13 +56,12 @@ findSimilarity <- function(first.number, second.number) {
   return(min(first.number, second.number)/max(first.number, second.number))
 }
 
+# which(names(graph.data) == "sample 3")
 # Assumed data input format is the returned format from scanGraphData(). 
 # Generates the averaged dataset which contains the averaged values from the 4 visualized scans for each sample.
 # Returns in the format of a dataframe.
-# scan.flags <- integer(length(test.graph.data))
-# scan.flags <- rbind(scan.flags, names(test.graph.data))
-# 
-# scan.flags[which(scan.flags[2,] == "std 1")] <<- 1
+# scan.flags <- integer(length(graph.data))
+
 getAverageScans <- function(graph.data, sparklink.file = NULL, scan.flags = NULL) {
   
   if (!is.null(scan.flags)) {

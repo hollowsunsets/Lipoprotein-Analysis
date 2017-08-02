@@ -51,7 +51,6 @@ shinyServer(function(input, output, session) {
          scan.timestamps <<- scanTimeStamps(raw.file)
        }
        scan.flags <<- integer(length(scan.data))
-       scan.flags <<- rbind(scan.flags, names(scan.data))
      }
      return(scan.data)
    })
@@ -96,7 +95,7 @@ shinyServer(function(input, output, session) {
   
     label <- reactive({
       if (!is.null(input$flagChange)) {
-        if (scan.flags[[which(scan.flags[2,] == input$sampleSelect)]] == 0) {
+        if (scan.flags[[which(names(graph.data) == input$sampleSelect)]] == 0) {
           label <- "Flag This Sample"
         } else {
           label <- "Unflag This Sample"
@@ -105,10 +104,10 @@ shinyServer(function(input, output, session) {
     })
     
     observeEvent(input$flagChange, {
-      if (scan.flags[[which(scan.flags[2,] == input$sampleSelect)]] == 0) {
-        scan.flags[[which(scan.flags[2,] == input$sampleSelect)]] <<- 1
+      if (scan.flags[[which(names(graph.data) == input$sampleSelect)]] == 0) {
+        scan.flags[[which(names(graph.data) == input$sampleSelect)]] <<- 1
       } else {
-        scan.flags[[which(scan.flags[2,] == input$sampleSelect)]] <<- 0
+        scan.flags[[which(names(graph.data) == input$sampleSelect)]] <<- 0
       }
     })
     # Defines behavior for the sample selection dropdown menu, which 
@@ -284,22 +283,20 @@ shinyServer(function(input, output, session) {
         # 
         # dissimilar.plot.data <- selected.scan.data[dissimilar.scans]
         similar.plot.data <- selected.scan.data
-        scan.plot.data <- melt(similar.plot.data, id.vars = "sample.diameters", variable.name = 'series')
+        scan.plot.data <- melt(similar.plot.data, id.vars = "sample.diameters", variable.name = 'scans')
         
         scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
-          geom_line(aes(colour = series)) +
-         # geom_line(aes(colour = red)) + 
-          scale_size_manual(values = c(0.1, 1.5)) +
+          geom_line(aes(colour = scans)) +
           xlab("Diameters (nm)") +
           ylab("Concentration (dN#/cm^2)") +
           ggtitle(paste0(input$sampleSelect)) + 
             theme(plot.title = element_text(hjust = 0.5)) # Centers graph title
         
       } else {
-        scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'series')
+        scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'scans')
         
         scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
-           geom_line(aes(colour = series)) +
+           geom_line(aes(colour = scans)) +
            xlab("Diameters (nm)") +
            ylab("Concentration (dN#/cm^2)") +
            ggtitle(paste0(input$sampleSelect)) + 
