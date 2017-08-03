@@ -69,21 +69,17 @@ calcSSE <- function(data.set, y.axis){
 }
 
 applyLoessSmooth <- function(raw.data, smoothing.span) {
-  raw.data <- raw.data[complete.cases(raw.data),]
-  
-  ## response
+  raw.data <- raw.data[complete.cases(raw.data),]    
   vars <- colnames(raw.data)
-  ## covariate
-  id <- 1:nrow(raw.data)
-  ## define a loess filter function (fitting loess regression line)
-  loess.filter <- function (x, given.data, span) loess(formula = as.formula(paste(x, "id", sep = "~")),
-                                                       data = given.data,
-                                                       degree = 1,
-                                                       span = span)$fitted 
-  ## apply filter column-by-column
-  loess.graph.data <- as.data.frame(lapply(vars, loess.filter, given.data = raw.data, span = smoothing.span),
-                                    col.names = colnames(raw.data))
-  sample.rows <- length(loess.graph.data[1])
-  loess.graph.data <- loess.graph.data %>% mutate("sample.diameters" = raw.data$sample.diameters[1:nrow(raw.data)])
-  
+  vars <- vars[vars != "sample.diameters"] #you are regressing against this, so exclude it from vars
+  loess.filter <- function (x, given.data, span) loess(
+    formula = as.formula(paste(x, "sample.diameters", sep = "~")), #not 'id'
+    data = given.data,
+    degree = 1,
+    span = span)$fitted 
+  loess.graph.data <- as.data.frame(lapply(vars, loess.filter, given.data = raw.data, 
+                                           span = smoothing.span),
+                                    col.names = vars) #final argument edited
+  loess.graph.data$sample.diameters <- raw.data$sample.diameters #simplified
+  return(loess.graph.data)      
 }

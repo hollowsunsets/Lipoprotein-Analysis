@@ -8,7 +8,7 @@
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # raw.scans.file <- read.csv("data\\AIMDataset2.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # raw.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
-graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
+# graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
 # sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
 # amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))

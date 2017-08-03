@@ -19,8 +19,8 @@ shinyServer(function(input, output, session) {
   scan.timestamps <- NULL
   timeControlsEnabled <- FALSE
   altered.sample.data <- NULL # maintains state for data and regressed graph
-  scan.flags <- NULL
-  
+  sample.flags <- NULL # tracks the samples that are bad/good
+  bad.scan.counter <- NULL # tracks the number of scans that are good or bad. if the # of bad scans > 2, flag as bad. 
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
@@ -50,7 +50,7 @@ shinyServer(function(input, output, session) {
          scan.data <- scanGraphData(raw.file) # else, set to default of "sample 1, sample 2, ..., etc"
          scan.timestamps <<- scanTimeStamps(raw.file)
        }
-       scan.flags <<- integer(length(scan.data))
+       sample.flags <<- integer(length(scan.data))
      }
      return(scan.data)
    })
@@ -94,8 +94,9 @@ shinyServer(function(input, output, session) {
     })
   
     label <- reactive({
+      graph.data <- scans.data()
       if (!is.null(input$flagChange)) {
-        if (scan.flags[[which(names(graph.data) == input$sampleSelect)]] == 0) {
+        if (sample.flags[[which(names(graph.data) == input$sampleSelect)]] == 0) {
           label <- "Flag This Sample"
         } else {
           label <- "Unflag This Sample"
@@ -104,12 +105,18 @@ shinyServer(function(input, output, session) {
     })
     
     observeEvent(input$flagChange, {
-      if (scan.flags[[which(names(graph.data) == input$sampleSelect)]] == 0) {
-        scan.flags[[which(names(graph.data) == input$sampleSelect)]] <<- 1
+      graph.data <- scans.data()
+      if (sample.flags[[which(names(graph.data) == input$sampleSelect)]] == 0) {
+        sample.flags[[which(names(graph.data) == input$sampleSelect)]] <<- 1
       } else {
-        scan.flags[[which(names(graph.data) == input$sampleSelect)]] <<- 0
+        sample.flags[[which(names(graph.data) == input$sampleSelect)]] <<- 0
       }
     })
+    
+    observeEvent(input$bookmarkState, {
+      session$doBookmark()
+    })
+    enableBookmarking(store = "url")
     # Defines behavior for the sample selection dropdown menu, which 
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
@@ -137,6 +144,7 @@ shinyServer(function(input, output, session) {
      }
    })
    
+   # Tracks the state of the current graph
    current_scan_data <- reactive({
      selected.sample.data <- current_sample_data()
        # Return the dataframe that corresponds with input$sampleSelect 
@@ -185,14 +193,14 @@ shinyServer(function(input, output, session) {
    output$averageScans <- downloadHandler(
      filename = function() { paste(gsub("\\..*","",input$scansData), "_average_scans", '.csv', sep='') }, 
      content = function(file) {
-        if (!is.null(input$sparklinkData) && !is.null(scan.flags)) {
-          write.csv(getAverageScans(scans.data(), sparklink.data(), scan.flags), file, row.names = FALSE)
+        if (!is.null(input$sparklinkData) && !is.null(sample.flags)) {
+          return(write.csv(getAverageScans(scans.data(), sparklink.data(), sample.flags), file, row.names = FALSE))
         } else if (!is.null(input$sparklinkData)) {
-            write.csv(getAverageScans(scans.data(), sparklink.data()), file, row.names = FALSE)
-        } else if (!is.null(scan.flags)) {
-            write.csv(getAverageScans(scans.data(), scan.flags = scan.flags), file, row.names = FALSE) 
+          return(write.csv(getAverageScans(scans.data(), sparklink.data()), file, row.names = FALSE))
+        } else if (!is.null(sample.flags)) {
+          return(write.csv(getAverageScans(scans.data(), sample.flags = sample.flags), file, row.names = FALSE))
         } else {
-         write.csv(getAverageScans(scans.data()), file, row.names = FALSE)
+          return(write.csv(getAverageScans(scans.data()), file, row.names = FALSE))
         }
        }
      )
@@ -202,13 +210,13 @@ shinyServer(function(input, output, session) {
      if (!is.null(selected.sample.data)) {
        scan.names <- colnames(select(selected.sample.data, starts_with("scan")))
        scan.names[length(scan.names) + 1] <- "None"
-       selectInput("scansToRemove", label = "Remove a Scan", 
+       selectInput("scansToRemove", label = "Flag a Scan", 
                    choices = scan.names, selected = "None")
      }
    })
    
    output$addScans <- renderUI({
-       selectInput("scansToAdd", label = "Add a Scan",
+       selectInput("scansToAdd", label = "Unflag a Scan",
                    choices = scansDropped, selected = "None")
    })
    

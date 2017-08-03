@@ -1,39 +1,54 @@
-# Assumes a format of the following: 
-# sample 1: scan1, scan2, scan3, scan4, sample.diameters
-# Returns a collection of scans that are measured to be significantly different
-# from each other (if any), based on the trapezoidal approximation of the graph area.
-## Current Issues: What is an appropriate "difference tolerance"? What if the values are all extremely different from one another?
-### Things to remember: If more than one scan is bad, then provide a flag to remove the entire scan.
-# current.graph.data <- graph.data[[17]]
-# difference.tolerance <- 0.90
+
+current.graph.data <- applyLoessSmooth(graph.data[[1]], 0.05)
+difference.tolerance <- 0.90
+
 findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
   badScans <- c() # Default value of badScans is NULL
 
-  # Removes all NA values from the data frame
+  # Removes all NA values from the scan data frame
   current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
-#   test<- c(max(current.graph.data$scan1), max(current.graph.data$scan2), max(current.graph.data$scan3),
-  #          max(current.graph.data$scan4))
-  # findSimilarity(test[3], test[4])
- #  test2 <- test$residuals
-# 
-#   # Calculates the area under the curves of the scan datasets with a trapezoidal approximation
-   scan.areas <- lapply(names(current.graph.data[1:4]),
-                      function(x) { trapz(current.graph.data$sample.diameters,
-                                           as.numeric(unlist(current.graph.data[x]))) })
-# 
-#   # Calculates the similarity of the scan areas to the scan mean
-  similarity.metrics <- lapply(seq_along(scan.areas), function(x) { mean(sapply(seq_along(scan.areas[-x]),
-                                                                        function(y){ findSimilarity(scan.areas[[x]], scan.areas[-x][[y]]) })) })
+  
+  
+  scan.maxima <- data.frame("maximums" = lapply(names(current.graph.data[1:4]), 
+                                                  function (x) { 
+                                                    findLocalMaxima(
+                                                      current.graph.data$sample.diameters, 
+                                                      current.graph.data[[x]],
+                                                      400)[1:5]} # 400 and 1:5 are arbitarily defined
+                                                  ), stringsAsFactors = FALSE)
+  colnames(scan.maxima) <- names(current.graph.data[1:4])
+  
+  scan.maxima <- scan.maximums[complete.cases(scan.maximums),]
+  
+  scan.maxima <- t(scan.maximums)
+  
+  # this is actually horrible. pretty sure I won't remember how this works tomorrow
+  maxima.similarities <- lapply(c(1:ncol(scan.maximums)), function(z) { # for each column in scan.maximums
+    lapply(seq_along(scan.maximums[,z]), function(x) { # for each element in the column
+        mean( # calculate the mean
+          sapply(seq_along(scan.maximums[,z][1: length(scan.maximums[,z]) - 1]), # for the number of elements in the column - 1 (because we are comparing to every element except itself)
+                 function(y) {
+                   findSimilarity(scan.maximums[,z][x], scan.maximums[,z][-x][[y]]) # the similarity for each element 
+                                                                                    # compared to all other elements in the column except itself
+                 })
+            )
+      })
+  })
+  
+  maxima.similarities.reshaped <- NULL
 
-  # Converts the similarity metrics list to a data frame, with the metrics in one column (for ease of access)
-  similarity.metrics <- do.call(rbind, lapply(similarity.metrics, data.frame, stringsAsFactors=FALSE))
+  maxima.similarities.reshaped <- as.data.frame(sapply(c(1:length(maxima.similarities)), 
+                                                       function(x) { cbind(maxima.similarities.reshaped, unlist(maxima.similarities[[x]]))}))
+  
 
+  similarity.metrics <- as.data.frame(cbind(unlist(lapply(c(1:length(maxima.similarities.reshaped)), 
+                                                          function(x) mean(as.numeric(maxima.similarities.reshaped[x,]), na.rm = FALSE)))))
   # Adds names to the similarity metrics dataframe so they can be accessed
   similarity.metrics$scan.names <- names(current.graph.data[1:4])
 
   # Records the bad scans, if there are any.
   for (i in 1:nrow(similarity.metrics)) {
-    if (similarity.metrics$X..i..[i] < difference.tolerance) {
+    if (similarity.metrics$V1[i] < difference.tolerance) {
       badScans <- c(similarity.metrics$scan.names[i], badScans)
     }
   }
@@ -47,12 +62,20 @@ findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) 
 }
 
 
-
+findLocalMaxima <- function(x, y, w = 1) {
+  n <- length(y)
+  y.max <- rollapply(zoo(y), 2 * w + 1, max, align = "center")
+  delta <- y.max - y[-c(1:w, n + 1 - 1:w)]
+  i.max <- which(delta <= 0) + w
+  return(unique(y[i.max]))
+}
 
 # Computes the similarity between two numbers, and returns a number representing a metric
 # that indicates the level of similarity, with 100 being a perfect match, and numbers closer
 # to 0 being extremely dissimilar.
 findSimilarity <- function(first.number, second.number) {
+  print(paste("first number ", first.number))
+  print(paste("second number ", second.number))
   return(min(first.number, second.number)/max(first.number, second.number))
 }
 
@@ -60,12 +83,12 @@ findSimilarity <- function(first.number, second.number) {
 # Assumed data input format is the returned format from scanGraphData(). 
 # Generates the averaged dataset which contains the averaged values from the 4 visualized scans for each sample.
 # Returns in the format of a dataframe.
-# scan.flags <- integer(length(graph.data))
+# sample.flags <- integer(length(graph.data))
 
-getAverageScans <- function(graph.data, sparklink.file = NULL, scan.flags = NULL) {
+getAverageScans <- function(graph.data, sparklink.file = NULL, sample.flags = NULL) {
   
-  if (!is.null(scan.flags)) {
-    avg.scans <- rbind(c("Scan Flag", scan.flags[1,]))
+  if (!is.null(sample.flags)) {
+    avg.scans <- rbind(c("Scan Flag", sample.flags[1,]))
   } else {
     # Otherwise, flags are automatically set to 0 for every existing sample in the dataset.
     avg.scans <- rbind(c("Scan Flag", integer(length(graph.data) - 1)))
