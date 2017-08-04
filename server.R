@@ -79,6 +79,13 @@ shinyServer(function(input, output, session) {
    # NOTE: Ordering of function definitions matters - Shiny renders as it reads in, and the various components are defined
    # such that dependencies will exist before they are needed (nothing will be called when it doesn't exist yet)
   
+   
+   
+   output$scanSimilarity <- renderUI({
+     checkboxInput("autoSimilarityScan", label = "Automatically Check for Dissimilarity",
+                   value = TRUE)
+   })
+   
    # Defines behavior for file control button, which hides and shows the 
    # file controls when clicked.  
     observeEvent(input$toggleFileControls, {
@@ -145,12 +152,26 @@ shinyServer(function(input, output, session) {
    current_sample_data <- reactive({
      current.sample.set <- scans.data()
      if (any(input$sampleSelect %in% names(current.sample.set))) {
-       dissimilar.scans[[input$sampleSelect]] <<- findDissimilarScan(current.sample.set[[input$sampleSelect]])
-       return(current.sample.set[[input$sampleSelect]])
+       current.sample.data <- current.sample.set[[input$sampleSelect]]
      } else {
-       dissimilar.scans[[1]] <<- findDissimilarScan(current.sample.set[[1]])
-       return(current.sample.set[[1]])
+       current.sample.data <- current.sample.set[[1]]
      }
+     return(current.sample.data)
+   })
+   
+   overall_dissimilarity_state <- reactive({
+     current.scan.data <- current_sample_data()
+     dissimilarity.check.active <- input$autoSimilarityScan
+     current.sample <- input$sampleSelect
+     if (input$autoSimilarityScan) {
+       dissimilar.scans[[input$sampleSelect]] <<- findDissimilarScan(current.scan.data)
+       if (length(dissimilar.scans[[current.sample]]) > 1) {
+         sample.flags[current.sample] <<- 1
+       }
+     } else {
+       dissimilar.scans[[current.sample]] <<- character()
+     }
+     return(dissimilar.scans[[current.sample]])
    })
    
    # Tracks the state of the current graph
@@ -186,7 +207,7 @@ shinyServer(function(input, output, session) {
      current.sample.data <- current_scan_data()
      if(!is.null(current.sample.data)) {
        # Sets temporary variable that contains the state of current scans marked as dissimilar
-       current.dissimilar.scans <- dissimilar.scans[[input$sampleSelect]]
+       current.dissimilar.scans <- overall_dissimilarity_state()
        
        if (length(current.dissimilar.scans) > 1) {
          sample.flags[input$sampleSelect] <- 1
@@ -199,6 +220,7 @@ shinyServer(function(input, output, session) {
          
          # If two or more scans are dissimilar, the sample overall is flagged.
          if (length(current.dissimilar.scans) > 1) {
+           
            sample.flags[input$sampleSelect] <- 1
          }
          # Retrieves the names of the scans that are currently being graphed.
@@ -262,6 +284,10 @@ shinyServer(function(input, output, session) {
    output$averageScans <- downloadHandler(
      filename = function() { paste(gsub("\\..*","",input$scansData), "_average_scans", '.csv', sep='') }, 
      content = function(file) {
+        print("average scans being downloaded")
+       print(sample.flags[input$sampleSelect])
+       
+       print(sample.flags)
         if (!is.null(input$sparklinkData) && !is.null(sample.flags)) {
           return(write.csv(getAverageScans(scans.data(), sparklink.data(), sample.flags), file, row.names = FALSE))
         } else if (!is.null(input$sparklinkData)) {
@@ -317,10 +343,11 @@ shinyServer(function(input, output, session) {
      )
    })
    
-   output$scanSimilarity <- renderUI({
-     checkboxInput("showDissimilarScan", label = "Show Scan Dissimilarity",
+   output$graphShowSimilarity <- renderUI({
+     checkboxInput("showDissimilarScan", label = "Show Dissimilarity on Graph",
                    value = TRUE)
    })
+
    
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
@@ -377,7 +404,10 @@ shinyServer(function(input, output, session) {
         
         current.scan.similarities <- current_dissimilar_scans()
         if (length(current.scan.similarities) > 1) {
-          sample.flags[input$sampleSelect] <- 1
+          sample.flags[input$sampleSelect] <<- 1
+          print("A sample was flagged.")
+          print(sample.flags[input$sampleSelect])
+          
         } 
 
         scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'scans')

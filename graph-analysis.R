@@ -95,10 +95,14 @@ findSimilarity <- function(first.number, second.number) {
 # Returns in the format of a dataframe.
 # sample.flags <- integer(length(graph.data))
 
+ # graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)), sparklink.file) 
+ # sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
+ # sample.flags <- integer(length(graph.data))
+ # names(sample.flags) <- names(graph.data)
 getAverageScans <- function(graph.data, sparklink.file = NULL, sample.flags = NULL) {
   
   if (!is.null(sample.flags)) {
-    avg.scans <- rbind(c("Scan Flag", sample.flags[1,]))
+    avg.scans <- rbind(c("Scan Flag", sample.flags))
   } else {
     # Otherwise, flags are automatically set to 0 for every existing sample in the dataset.
     avg.scans <- rbind(c("Scan Flag", integer(length(graph.data) - 1)))
@@ -139,6 +143,11 @@ getAverageScans <- function(graph.data, sparklink.file = NULL, sample.flags = NU
       for (i in 1:(ncol(avg.scans) - 1)) {
         current.sample <- graph.data[[graph.index]][,1:4]
         current.sample.means <- rowMeans(current.sample)
+        # If the sample is flagged, the average scan for that sample will be set to the 4th 
+        # scan, which is scan #6 
+        if (sample.flags[graph.index] == 1) {
+          current.sample.means <- current.sample[[4]]
+        }
         avg.sample.data <- avg.sample.data %>%
           cbind(as.character(current.sample.means))
         graph.index <- graph.index + 1
@@ -147,6 +156,14 @@ getAverageScans <- function(graph.data, sparklink.file = NULL, sample.flags = NU
       names(avg.sample.data) <- names(avg.scans)
       avg.scans <- bind_rows(avg.scans, avg.sample.data)
     }
+  
+  avg.samples <- avg.scans[,2:ncol(avg.scans)]
+  avg.samples <- avg.samples[,order((colnames(avg.samples)), decreasing =TRUE)]
+  avg.scans[,2:ncol(avg.scans)] <- avg.samples
+  avg.scans <- cbind("V1" = avg.scans[,1], avg.samples)
+  
   avg.scans <- avg.scans[complete.cases(avg.scans),]
   return(avg.scans)
 }
+
+

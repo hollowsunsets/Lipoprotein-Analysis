@@ -42,6 +42,7 @@ shinyUI(function(request) {
               uiOutput("removeScans"),
               uiOutput("addScans"),
               h4("Managing Scan Similarity"),
+              uiOutput("graphShowSimilarity"),
               uiOutput("scanSimilarity"),
               p("Select the scans you would like to flag or unflag as bad from the sample currently graphed.."),
               uiOutput("flagScans"),
