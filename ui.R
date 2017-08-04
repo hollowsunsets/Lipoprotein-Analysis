@@ -36,12 +36,16 @@ shinyUI(function(request) {
               uiOutput("smoothControl"),
               p(""),
               p("Press the button below to flag or unflag the sample currently graphed for removal."),
-              uiOutput("toggleScanFlag"),
+              uiOutput("toggleSampleFlag"),
               p(""),
-              p("Select the scans you would like to flag or unflag as bad below."),
+              p("Select the scans you would like to remove or add from the graph below."),
               uiOutput("removeScans"),
               uiOutput("addScans"),
+              h4("Managing Scan Similarity"),
               uiOutput("scanSimilarity"),
+              p("Select the scans you would like to flag or unflag as bad from the sample currently graphed.."),
+              uiOutput("flagScans"),
+              uiOutput("unflagScans"),
               downloadButton("averageScans", label = "Get Average Scans"))
           ),
         hidden(

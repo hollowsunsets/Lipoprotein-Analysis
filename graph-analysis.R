@@ -1,34 +1,33 @@
 
-current.graph.data <- applyLoessSmooth(graph.data[[1]], 0.05)
-difference.tolerance <- 0.90
 
 findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
   badScans <- c() # Default value of badScans is NULL
 
   # Removes all NA values from the scan data frame
   current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
-  
-  
-  scan.maxima <- data.frame("maximums" = lapply(names(current.graph.data[1:4]), 
+  current.scan.names <- names(select(current.graph.data, starts_with("scan")))
+
+  scan.maxima <- data.frame("maximums" = lapply(current.scan.names, 
                                                   function (x) { 
                                                     findLocalMaxima(
                                                       current.graph.data$sample.diameters, 
                                                       current.graph.data[[x]],
-                                                      400)[1:5]} # 400 and 1:5 are arbitarily defined
+                                                      700)[1:5]} # 400 and 1:5 are arbitarily defined
                                                   ), stringsAsFactors = FALSE)
-  colnames(scan.maxima) <- names(current.graph.data[1:4])
   
-  scan.maxima <- scan.maximums[complete.cases(scan.maximums),]
+  names(scan.maxima) <- current.scan.names
   
-  scan.maxima <- t(scan.maximums)
+  scan.maxima <- scan.maxima[complete.cases(scan.maxima),]
+  
+  scan.maxima <- t(scan.maxima)
   
   # this is actually horrible. pretty sure I won't remember how this works tomorrow
-  maxima.similarities <- lapply(c(1:ncol(scan.maximums)), function(z) { # for each column in scan.maximums
-    lapply(seq_along(scan.maximums[,z]), function(x) { # for each element in the column
+  maxima.similarities <- lapply(c(1:ncol(scan.maxima)), function(z) { # for each column in scan.maximums
+    lapply(seq_along(scan.maxima[,z]), function(x) { # for each element in the column
         mean( # calculate the mean
-          sapply(seq_along(scan.maximums[,z][1: length(scan.maximums[,z]) - 1]), # for the number of elements in the column - 1 (because we are comparing to every element except itself)
+          sapply(seq_along(scan.maxima[,z][1: length(scan.maxima[,z]) - 1]), # for the number of elements in the column - 1 (because we are comparing to every element except itself)
                  function(y) {
-                   findSimilarity(scan.maximums[,z][x], scan.maximums[,z][-x][[y]]) # the similarity for each element 
+                   findSimilarity(scan.maxima[,z][x], scan.maxima[,z][-x][[y]]) # the similarity for each element 
                                                                                     # compared to all other elements in the column except itself
                  })
             )
@@ -36,20 +35,34 @@ findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) 
   })
   
   maxima.similarities.reshaped <- NULL
-
-  maxima.similarities.reshaped <- as.data.frame(sapply(c(1:length(maxima.similarities)), 
-                                                       function(x) { cbind(maxima.similarities.reshaped, unlist(maxima.similarities[[x]]))}))
+  
   
 
-  similarity.metrics <- as.data.frame(cbind(unlist(lapply(c(1:length(maxima.similarities.reshaped)), 
-                                                          function(x) mean(as.numeric(maxima.similarities.reshaped[x,]), na.rm = FALSE)))))
+  maxima.similarities.reshaped <- as.data.frame(sapply(c(1:length(maxima.similarities)), 
+                                                       function(x) { cbind(maxima.similarities.reshaped, 
+                                                                           unlist(maxima.similarities[[x]]))}))
+
+  if (ncol(maxima.similarities.reshaped) > 1) {
+    similarity.metrics <- as.data.frame(cbind(unlist(lapply(c(1:nrow(maxima.similarities.reshaped)), 
+                                                            function(x) mean(as.numeric(maxima.similarities.reshaped[x,]), 
+                                                                             na.rm = FALSE)))))
+  } else {
+    similarity.metrics <- maxima.similarities.reshaped
+  }
   # Adds names to the similarity metrics dataframe so they can be accessed
-  similarity.metrics$scan.names <- names(current.graph.data[1:4])
+  similarity.metrics$scan.names <- current.scan.names
 
   # Records the bad scans, if there are any.
+  
   for (i in 1:nrow(similarity.metrics)) {
-    if (similarity.metrics$V1[i] < difference.tolerance) {
-      badScans <- c(similarity.metrics$scan.names[i], badScans)
+    if (similarity.metrics$V1[1] != min(similarity.metrics$V1)) {
+      if (similarity.metrics$V1[i] < similarity.metrics$V1[1]) {
+        badScans <- c(similarity.metrics$scan.names[i], badScans)
+      }
+    } else {
+      if (similarity.metrics$V1[i] < mean(similarity.metrics$V1)) {
+        badScans <- c(similarity.metrics$scan.names[i], badScans)
+      }
     }
   }
   # If there are no bad scans, return a list containing "None" (assuming that the functions using this expect a list)
@@ -74,12 +87,9 @@ findLocalMaxima <- function(x, y, w = 1) {
 # that indicates the level of similarity, with 100 being a perfect match, and numbers closer
 # to 0 being extremely dissimilar.
 findSimilarity <- function(first.number, second.number) {
-  print(paste("first number ", first.number))
-  print(paste("second number ", second.number))
   return(min(first.number, second.number)/max(first.number, second.number))
 }
 
-# which(names(graph.data) == "sample 3")
 # Assumed data input format is the returned format from scanGraphData(). 
 # Generates the averaged dataset which contains the averaged values from the 4 visualized scans for each sample.
 # Returns in the format of a dataframe.

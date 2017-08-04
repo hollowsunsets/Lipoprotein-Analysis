@@ -7,6 +7,7 @@ library(reshape2)
 library(readxl)
 library(lubridate)
 library(pracma)
+library(zoo)
 
 options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
@@ -20,7 +21,7 @@ shinyServer(function(input, output, session) {
   timeControlsEnabled <- FALSE
   altered.sample.data <- NULL # maintains state for data and regressed graph
   sample.flags <- NULL # tracks the samples that are bad/good
-  bad.scan.counter <- NULL # tracks the number of scans that are good or bad. if the # of bad scans > 2, flag as bad. 
+  dissimilar.scans <- NULL
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
@@ -50,7 +51,10 @@ shinyServer(function(input, output, session) {
          scan.data <- scanGraphData(raw.file) # else, set to default of "sample 1, sample 2, ..., etc"
          scan.timestamps <<- scanTimeStamps(raw.file)
        }
+       dissimilar.scans <<- vector(mode = "list", length = length(scan.data))
+       names(dissimilar.scans) <<- names(scan.data)
        sample.flags <<- integer(length(scan.data))
+       names(sample.flags) <<- names(scan.data)
      }
      return(scan.data)
    })
@@ -89,14 +93,13 @@ shinyServer(function(input, output, session) {
     
     # Defines behavior for the scan flag button, which flags or unflags the 
     # current sample for removal. 
-    output$toggleScanFlag <- renderUI({
+    output$toggleSampleFlag <- renderUI({
       actionButton("flagChange", label = label())
     })
   
     label <- reactive({
-      graph.data <- scans.data()
       if (!is.null(input$flagChange)) {
-        if (sample.flags[[which(names(graph.data) == input$sampleSelect)]] == 0) {
+        if (sample.flags[input$sampleSelect] == 0) {
           label <- "Flag This Sample"
         } else {
           label <- "Unflag This Sample"
@@ -104,19 +107,23 @@ shinyServer(function(input, output, session) {
       }
     })
     
-    observeEvent(input$flagChange, {
-      graph.data <- scans.data()
-      if (sample.flags[[which(names(graph.data) == input$sampleSelect)]] == 0) {
-        sample.flags[[which(names(graph.data) == input$sampleSelect)]] <<- 1
+    observeEvent({input$flagChange
+                  input$flagScans
+                  input$unflagScans }, {
+      print("observe Event for flag sample button update is triggered")
+      if (sample.flags[input$sampleSelect] == 0) {
+        sample.flags[input$sampleSelect] <<- 1
       } else {
-        sample.flags[[which(names(graph.data) == input$sampleSelect)]] <<- 0
+        sample.flags[input$sampleSelect] <<- 0
       }
     })
     
     observeEvent(input$bookmarkState, {
       session$doBookmark()
     })
+    
     enableBookmarking(store = "url")
+    
     # Defines behavior for the sample selection dropdown menu, which 
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
@@ -138,8 +145,10 @@ shinyServer(function(input, output, session) {
    current_sample_data <- reactive({
      current.sample.set <- scans.data()
      if (any(input$sampleSelect %in% names(current.sample.set))) {
+       dissimilar.scans[[input$sampleSelect]] <<- findDissimilarScan(current.sample.set[[input$sampleSelect]])
        return(current.sample.set[[input$sampleSelect]])
      } else {
+       dissimilar.scans[[1]] <<- findDissimilarScan(current.sample.set[[1]])
        return(current.sample.set[[1]])
      }
    })
@@ -170,9 +179,69 @@ shinyServer(function(input, output, session) {
        }
      return(altered.sample.data)
    })
+   
+   
+   
+   current_dissimilar_scans <- reactive({
+     current.sample.data <- current_scan_data()
+     if(!is.null(current.sample.data)) {
+       # Sets temporary variable that contains the state of current scans marked as dissimilar
+       current.dissimilar.scans <- dissimilar.scans[[input$sampleSelect]]
+       
+       if (length(current.dissimilar.scans) > 1) {
+         sample.flags[input$sampleSelect] <- 1
+       } 
+       # Updates the scan names in the dropdown menu for flagging scans and updates the stored flagged scans
+       if (input$scansToFlag != "None" && !is.null(input$scansToFlag) &&  !(input$scansToFlag %in% current.dissimilar.scans)) {
+    
+         # The scan that the user picked is added to the current dissimilar scans
+         current.dissimilar.scans <- append(current.dissimilar.scans, input$scansToFlag)
+         
+         # If two or more scans are dissimilar, the sample overall is flagged.
+         if (length(current.dissimilar.scans) > 1) {
+           sample.flags[input$sampleSelect] <- 1
+         }
+         # Retrieves the names of the scans that are currently being graphed.
+         current.scan.names <- colnames(select(current.sample.data, starts_with("scan")))
+         
+         flagged.names <- current.scan.names[(current.scan.names %in% current.dissimilar.scans)]
+         flagged.names <- append(flagged.names, "None")
+         
+         unflagged.names <- current.scan.names[!(current.scan.names %in% current.dissimilar.scans)]
+         unflagged.names <- append(unflagged.names, "None")
+         
+         updateSelectInput(session, "scansToFlag", choices = unflagged.names, selected = "None")
+         updateSelectInput(session, "scansToUnflag", choices = flagged.names, selected = "None")
+         dissimilar.scans[[input$sampleSelect]] <<- current.dissimilar.scans
+       } 
+       
+       if (input$scansToUnflag != "None" && !is.null(input$scansToUnflag) && (input$scansToUnflag %in% current.dissimilar.scans)) {
+         current.dissimilar.scans <- current.dissimilar.scans[-which(current.dissimilar.scans == input$scansToUnflag)]
+         
+         if (length(current.dissimilar.scans) < 2) {
+           sample.flags[input$sampleSelect] <- 0
+         } 
+         
+         current.scan.names <- colnames(select(current.sample.data, starts_with("scan")))
+         flagged.names <- current.scan.names[(current.scan.names %in% current.dissimilar.scans)]
+         flagged.names <- append(flagged.names, "None")
+         
+         unflagged.names <- current.scan.names[!(current.scan.names %in% current.dissimilar.scans)]
+         unflagged.names <- append(unflagged.names, "None")
 
-   observeEvent(input$sampleSelect, {
+         updateSelectInput(session, "scansToFlag", choices = unflagged.names, selected = "None")
+         updateSelectInput(session, "scansToUnflag", choices = flagged.names, selected = "None")
+         dissimilar.scans[[input$sampleSelect]] <<- current.dissimilar.scans
+       }
+       
+     }
+     return(dissimilar.scans[[input$sampleSelect]])
+   })
+   
+   observeEvent(input$sampleSelect, 
+                {
      altered.sample.data <<- current_sample_data()
+     dissimilar.scans[[input$sampleSelect]] <<- current_dissimilar_scans()
    })
    
    observeEvent(input$scansData, {
@@ -210,15 +279,34 @@ shinyServer(function(input, output, session) {
      if (!is.null(selected.sample.data)) {
        scan.names <- colnames(select(selected.sample.data, starts_with("scan")))
        scan.names[length(scan.names) + 1] <- "None"
-       selectInput("scansToRemove", label = "Flag a Scan", 
+       selectInput("scansToRemove", label = "Remove a Scan", 
                    choices = scan.names, selected = "None")
      }
    })
    
    output$addScans <- renderUI({
-       selectInput("scansToAdd", label = "Unflag a Scan",
+     selectInput("scansToAdd", label = "Add a Scan",
                    choices = scansDropped, selected = "None")
    })
+   
+   output$flagScans <- renderUI({
+     selected.sample.data <- current_sample_data()
+     scan.names <- colnames(select(selected.sample.data, starts_with("scan")))
+     unflagged.scans <- scan.names[!(scan.names %in% dissimilar.scans[[input$sampleSelect]])]
+     unflagged.scans <- append(unflagged.scans, "None")
+     selectInput("scansToFlag", label = "Flag a Scan",
+                 choices = unflagged.scans, selected = "None")
+   })
+   
+   output$unflagScans <- renderUI({
+     selected.sample.data <- current_sample_data()
+     scan.names <- colnames(select(selected.sample.data, starts_with("scan")))
+     flagged.scans <- scan.names[(scan.names %in% dissimilar.scans[[input$sampleSelect]])]
+     flagged.scans <- append(flagged.scans, "None")
+     selectInput("scansToUnflag", label = "Unflag a Scan",
+                 choices = flagged.scans, selected = "None")
+   })
+   
    
    
    output$smoothControl <- renderUI({
@@ -283,21 +371,31 @@ shinyServer(function(input, output, session) {
    
    output$scanPlot <- renderPlot({
      selected.scan.data <- current_scan_data()
+     current.scan.similarities <- current_dissimilar_scans()
      if (!is.null(input$scansData) && !is.null(selected.scan.data)) { 
       if (input$showDissimilarScan) {
-        # dissimilar.scans <- findDissimilarScan(selected.scan.data)
-        # 
-        # similar.plot.data <- selected.scan.data[, !names(selected.scan.data) %in% dissimilar.scans]
-        # 
-        # dissimilar.plot.data <- selected.scan.data[dissimilar.scans]
-        similar.plot.data <- selected.scan.data
-        scan.plot.data <- melt(similar.plot.data, id.vars = "sample.diameters", variable.name = 'scans')
+        
+        current.scan.similarities <- current_dissimilar_scans()
+        if (length(current.scan.similarities) > 1) {
+          sample.flags[input$sampleSelect] <- 1
+        } 
+
+        scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'scans')
+        scan.plot.data <- scan.plot.data %>% mutate("dissimilar" = scan.plot.data$scans %in% current.scan.similarities)
+        
+        
+        scan.plot.subtitle <- "Dissimilar Scans:"
+        for (i in 1:length(current.scan.similarities)) {
+          scan.plot.subtitle <- paste(scan.plot.subtitle, current.scan.similarities[i])
+        }
+        
         
         scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
-          geom_line(aes(colour = scans)) +
+          geom_line(aes(colour = scans, linetype = dissimilar)) +
           xlab("Diameters (nm)") +
           ylab("Concentration (dN#/cm^2)") +
-          ggtitle(paste0(input$sampleSelect)) + 
+          ggtitle(bquote(atop(.(input$sampleSelect), 
+                              atop(.(scan.plot.subtitle))))) + 
             theme(plot.title = element_text(hjust = 0.5)) # Centers graph title
         
       } else {

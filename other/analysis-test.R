@@ -4,45 +4,14 @@ library(plotly)
 library(ggplot2)
 library(ggvis)
 library(pracma)
-
-test2 <- ampGraphData(read_excel("data\\170522_new_data_format_for_JC_amplog.xlsx", col_names = FALSE))
-test2 <- scanGraphData(read.csv("data\\170522_new_data_format_for_JC_DMA.csv", stringsAsFactors = FALSE))
-test3 <- scanGraphData(read.csv("data\\AIMDataset2.csv", stringsAsFactors=FALSE))
-
-graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)))
+library(zoo)
 
 
-val1 <- trapz(scan.test$sample.diameters, scan.test$scan1)
-val2 <- trapz(scan.test$sample.diameters, scan.test$scan2)
-val3 <- trapz(scan.test$sample.diameters, scan.test$scan3)
-val4 <- trapz(scan.test$sample.diameters, scan.test$scan4)
+graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
+loess.graph.data <- applyLoessSmooth(graph.data[[17]], 0.05)
+sample.flags <- integer(length(graph.data))
 
-
-testIf <- function(n) {
-  if (n == 0) {
-    print('1')
-  }
-  if (n != 2) {
-    print('2')
-  }
-  if (n < 1) {
-    print('3')
-  }
-}
-
-testIf(0)
-
-
-avg <- mean(val1, val2, val3, val4, na.rm = FALSE)
-
-
-dissimilar.scans <- findDissimilarScan(loess.graph.data)
-
-# similar.plot.data <- selected.scan.data[, !names(selected.scan.data) %in% dissimilar.scans]
-
-# dissimilar.plot.data <- selected.scan.data[dissimilar.scans]
-
-# dissimilar.plot.data <- cbind(dissimilar.plot.data, "sample.diameters" = selected.scan.data$sample.diameters)
+names(sample.flags) <- names(graph.data)
 
 scan.plot.data <- melt(loess.graph.data, id.vars = "sample.diameters", variable.name = 'scans')
 scan.plot.data <- scan.plot.data %>% mutate("dissimilar" = scan.plot.data$scans %in% dissimilar.scans)
@@ -50,8 +19,40 @@ scan.plot.data <- scan.plot.data %>% mutate("dissimilar" = scan.plot.data$scans 
 # Steps:
 ## For marked: Pull out all of the bad data
 ## Melt the rest of the data normally
-## Plot the lines separately 
 
+dissimilar.scans <- vector(mode = "list", length = length(graph.data))
+names(dissimilar.scans) <- names(graph.data)
+
+dissimilar.scans[["sample 17"]] <- findDissimilarScan(loess.graph.data)
+
+current.scan.similarities <- dissimilar.scans[["sample 17"]]
+
+current.scan.similarities <- current.scan.similarities[-which(current.scan.similarities == "scan1")]
+
+current.scan.similarities <- append(current.scan.similarities, "scan2")
+
+current.scan.names <- colnames(select(loess.graph.data, starts_with("scan")))
+flagged.names <- current.scan.names[(current.scan.names %in% dissimilar.scans[["sample 17"]])]
+unflagged.names <- current.scan.names[!(current.scan.names %in% dissimilar.scans[["sample 17"]])]
+
+
+dissimilar.scans["sample 1"] <- findDissimilarScan(applyLoessSmooth(graph.data[[1]], 0.05))
+
+dissimilar.scans <- lapply(c(1:length(graph.data)), function(x) { findDissimilarScan(applyLoessSmooth(graph.data[[x]], 0.05)) } )
+
+names(dissimilar.scans) <- names(graph.data)
+c(1:length(graph.data))
+length(graph.data)
+
+test <- dissimilar.scans["sample 1"]
+
+is.null(test[[1]])
+test$x
+
+test$i
+
+print(test)
+print(test2)
 scan.plot <- ggplot(NULL, aes(sample.diameters, value)) +
   geom_line(data = scan.plot.data, aes(colour = scans, linetype = dissimilar)) +
   xlab("Diameters (nm)") +
