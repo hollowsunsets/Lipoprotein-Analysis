@@ -177,6 +177,9 @@ ampGraphData <- function(raw.amplog.file) {
   amp.graph.data <- raw.amplog.file %>% select(X0, X2)
   return(amp.graph.data)
 }
+amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
+
+
 
 # Returns a data frame that contains the time stamps and amperage data from the given amperage dataframe 
 # within the given start time and end time, +/- 3 minutes.
@@ -187,7 +190,7 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
   selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
   
   # Selects the times from the data that are contained within the previously calculated time interval.
-  selected.amp.times <- amp.graph.data[,1] %>% filter(amp.graph.data$X0 %within% selected.interval)
+  selected.amp.times <- amp.graph.data[,1] %>% filter(amp.graph.data$X0 %within% selected.interval) 
   
   # Joins the corresponding amperage data to the selected time stamps.
   selected.amp.data <- inner_join(selected.amp.times, amp.graph.data, by = "X0")
