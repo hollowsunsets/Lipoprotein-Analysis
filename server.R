@@ -18,7 +18,6 @@ source("graph-analysis.R")
 shinyServer(function(input, output, session) {
   # ----------------------------------------------- Global Variables --------------------------------------------------#
   scan.timestamps <- NULL
-  timeControlsEnabled <- FALSE
   altered.sample.data <- NULL # maintains state for data and regressed graph
   sample.flags <- NULL # tracks the samples that are bad/good
   dissimilar.scans <- NULL
@@ -352,6 +351,11 @@ shinyServer(function(input, output, session) {
    
    
   # ---------------------------------- Amplog Interactions Functions ----------------------------- #
+   output$toggleTimeControls <- renderUI({
+     checkboxInput("enableTimeControls", label = "Toggle & Enable Time Controls", 
+                   value = FALSE)
+   })
+   
    output$timeControl <- renderUI({
      amp.range <- amplog.data()
      start.time <- amp.range$X0[1]
@@ -367,11 +371,8 @@ shinyServer(function(input, output, session) {
    current_amp_data <- reactive({
      current.amp.set <- amplog.data()
      altered.amp.data <- current.amp.set
-     if (!is.null(input$timeControl) && timeControlsEnabled) {
+     if (!is.null(input$timeControl) && input$enableTimeControls) {
        print("time controls recognized as enabled - retrieving timestamps from time control")
-       print(input$timeControl)
-       print(input$timeControl[1])
-       print(input$timeControl[2])
        altered.amp.data <- intervalAmperageData(altered.amp.data,
                                                 input$timeControl[[1]],
                                                 input$timeControl[[2]])
@@ -393,12 +394,9 @@ shinyServer(function(input, output, session) {
    })
    
    
-   observeEvent(input$toggleTimeControls, {
-     print(input$toggleTimeControls)
-     timeControlsEnabled <<- !timeControlsEnabled
-     toggle("amp-time-controls")
-     current.amp.data <- current_amp_data()
-   })
+    observeEvent(input$enableTimeControls, {
+      toggle("amp-time-controls")
+    })
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
    

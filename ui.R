@@ -54,12 +54,10 @@ shinyUI(function(request) {
               h3("Amplog Graph Interactions"),
               p("Click the button below to display a graph that visualizes the entire amperage dataset."),
               actionButton("displayFullAmpGraph", "Display Amp Graph with Entire Dataset"),
-              actionButton("toggleTimeControls", "Toggle Time Controls"),
-              hidden(
-                div(id = "amp-time-controls",
-                  p("If desired, select a start and end time for the amperage data to change the data displayed."),
-                  uiOutput("timeControl")
-                )
+              uiOutput("toggleTimeControls"),
+              div(id = "amp-time-controls",
+                p("If desired, select a start and end time for the amperage data to change the data displayed."),
+                uiOutput("timeControl")
               )
           )
         )
