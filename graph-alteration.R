@@ -71,15 +71,15 @@ calcSSE <- function(data.set, y.axis){
 applyLoessSmooth <- function(raw.data, smoothing.span) {
   raw.data <- raw.data[complete.cases(raw.data),]    
   vars <- colnames(raw.data)
-  vars <- vars[vars != "sample.diameters"] #you are regressing against this, so exclude it from vars
+  vars <- vars[vars != "sample.diameters"] 
   loess.filter <- function (x, given.data, span) loess(
-    formula = as.formula(paste(x, "sample.diameters", sep = "~")), #not 'id'
+    formula = as.formula(paste(x, "sample.diameters", sep = "~")),
     data = given.data,
     degree = 1,
     span = span)$fitted 
   loess.graph.data <- as.data.frame(lapply(vars, loess.filter, given.data = raw.data, 
                                            span = smoothing.span),
-                                    col.names = vars) #final argument edited
-  loess.graph.data$sample.diameters <- raw.data$sample.diameters #simplified
+                                    col.names = vars) 
+  loess.graph.data$sample.diameters <- raw.data$sample.diameters 
   return(loess.graph.data)      
 }

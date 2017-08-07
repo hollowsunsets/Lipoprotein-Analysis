@@ -177,7 +177,7 @@ ampGraphData <- function(raw.amplog.file) {
   amp.graph.data <- raw.amplog.file %>% select(X0, X2)
   return(amp.graph.data)
 }
-amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
+# amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
 
 
 
@@ -187,7 +187,11 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
   # Calculates the time interval which will represent the range of amperage data that will be graphed.
   # Time interval is set to +/- 3 minutes for improved graph readability and to catch times that are not an exact match.
   # i.e, cases where start time is 12:15:30, amperage time is 12:15:29
+  print(start.time)
+  print(end.time)
   selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
+  
+  print(selected.interval)
   
   # Selects the times from the data that are contained within the previously calculated time interval.
   selected.amp.times <- amp.graph.data[,1] %>% filter(amp.graph.data$X0 %within% selected.interval) 

@@ -134,6 +134,7 @@ shinyServer(function(input, output, session) {
     # Defines behavior for the sample selection dropdown menu, which 
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
+     print(names(scans.data()))
      selectInput("sampleSelect", label = "Select a Sample",
                  choices = names(scans.data()), selected = names(scans.data())[1])
    })
@@ -366,7 +367,11 @@ shinyServer(function(input, output, session) {
    current_amp_data <- reactive({
      current.amp.set <- amplog.data()
      altered.amp.data <- current.amp.set
-     if (timeControlsEnabled) {
+     if (!is.null(input$timeControl) && timeControlsEnabled) {
+       print("time controls recognized as enabled - retrieving timestamps from time control")
+       print(input$timeControl)
+       print(input$timeControl[1])
+       print(input$timeControl[2])
        altered.amp.data <- intervalAmperageData(altered.amp.data,
                                                 input$timeControl[[1]],
                                                 input$timeControl[[2]])
@@ -389,9 +394,10 @@ shinyServer(function(input, output, session) {
    
    
    observeEvent(input$toggleTimeControls, {
+     print(input$toggleTimeControls)
      timeControlsEnabled <<- !timeControlsEnabled
      toggle("amp-time-controls")
-     current.amp.data.reload <- current_amp_data()
+     current.amp.data <- current_amp_data()
    })
    
   # ------------------------------------ Graph Rendering ----------------------------------------- #
