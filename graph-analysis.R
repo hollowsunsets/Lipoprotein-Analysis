@@ -1,4 +1,4 @@
-
+current.graph.data <- applyLoessSmooth(graph.data[[17]], 0.05)
 
 findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
   badScans <- c() # Default value of badScans is NULL
@@ -11,9 +11,9 @@ findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) 
                                                   function (x) { 
                                                     findLocalMaxima(
                                                       current.graph.data$sample.diameters, 
-                                                      current.graph.data[[x]],
-                                                      700)[1:5]} # 400 and 1:5 are arbitarily defined
-                                                  ), stringsAsFactors = FALSE)
+                                                      current.graph.data[[x]], 700)[1:5]
+                                                  } # 400 and 1:5 are arbitarily defined
+                                                ), stringsAsFactors = FALSE)
   
   names(scan.maxima) <- current.scan.names
   
@@ -33,6 +33,13 @@ findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) 
             )
       })
   })
+  
+  # maxima.similarities2 <- mapply(function(x) {
+  #   
+  # }, c(1:ncol(scan.maxima)))
+  #   
+  
+  
   
   maxima.similarities.reshaped <- NULL
   

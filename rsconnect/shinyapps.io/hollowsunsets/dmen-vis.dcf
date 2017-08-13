@@ -3,9 +3,9 @@ title: dmen-vis
 account: hollowsunsets
 server: shinyapps.io
 appId: 194614
-bundleId: 931366
+bundleId: 932766
 url: https://hollowsunsets.shinyapps.io/dmen-vis/
-when: 1502129196.11639
+when: 1502209234.64883
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: data/170522_new_data_format_for_JC.csv|data/170522_new_data_format_for_JC_amplog.xlsx|data/170522_new_data_format_for_JC_DMA.csv|data/170525_isoHDL_stability.xlsx|data/170605_HDL25x_v_125x_4C_v_37CisoHDL.xlsx|data/170608_Study113_Apheresis74H_CompleteSet.xlsx|data/170622_Study114_AIM.csv|data/170622_Study114_Amplog.xlsx|data/170622_Study114_Runlist.csv|data/170712_Study115_Batch3_AIMScans.csv|data/170712_Study115_Batch3_Amplog.xlsx|data/170712_Study115_Batch3_Runlist.csv|data/AIM.csv|data/AIMDataset2.csv|data/amp.xlsx|data/ampdDataset2.xlsx|data/CactiSet1AIM.csv|data/CactiSet1AmplogExcel.xlsx|data/CactiSet1AmplogExcelJC.xlsx|data/CactiSet1Runlist.csv|data/CactiSet1RunlistJC.csv|data/Fyttic_input.csv|data/OriginalCactiAIM.csv|data/SparkRunlist.csv|data/SparkRunlistDataset2.csv|data/new data/Sub NewClassifier DMAAnalysis.docx|other/app.R|other/loesstest.R|other/multiplot.R

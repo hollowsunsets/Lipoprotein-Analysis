@@ -21,6 +21,7 @@ shinyServer(function(input, output, session) {
   altered.sample.data <- NULL # maintains state for data and regressed graph
   sample.flags <- NULL # tracks the samples that are bad/good
   dissimilar.scans <- NULL
+  
   # -------------------------------------- General Data Processing and Retrieval ----------------------------------- #
 
     # Retrieves and reads in the given data files 
@@ -134,6 +135,7 @@ shinyServer(function(input, output, session) {
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
      print(names(scans.data()))
+     print(names(scans.data())[1])
      selectInput("sampleSelect", label = "Select a Sample",
                  choices = names(scans.data()), selected = names(scans.data())[1])
    })
@@ -152,8 +154,12 @@ shinyServer(function(input, output, session) {
    current_sample_data <- reactive({
      current.sample.set <- scans.data()
      if (any(input$sampleSelect %in% names(current.sample.set))) {
+       print("input$sampleSelect was found in the names available")
+       print(input$sampleSelect)
        current.sample.data <- current.sample.set[[input$sampleSelect]]
      } else {
+       print("input$sampleSelect was not found for some reason")
+       print(input$sampleSelect)
        current.sample.data <- current.sample.set[[1]]
      }
      return(current.sample.data)
@@ -165,9 +171,6 @@ shinyServer(function(input, output, session) {
      current.sample <- input$sampleSelect
      if (input$autoSimilarityScan) {
        dissimilar.scans[[input$sampleSelect]] <<- findDissimilarScan(current.scan.data)
-       if (length(dissimilar.scans[[current.sample]]) > 1) {
-         sample.flags[current.sample] <<- 1
-       }
      } else {
        dissimilar.scans[[current.sample]] <<- character()
      }
@@ -240,10 +243,6 @@ shinyServer(function(input, output, session) {
        if (input$scansToUnflag != "None" && !is.null(input$scansToUnflag) && (input$scansToUnflag %in% current.dissimilar.scans)) {
          current.dissimilar.scans <- current.dissimilar.scans[-which(current.dissimilar.scans == input$scansToUnflag)]
          
-         if (length(current.dissimilar.scans) < 2) {
-           sample.flags[input$sampleSelect] <- 0
-         } 
-         
          current.scan.names <- colnames(select(current.sample.data, starts_with("scan")))
          flagged.names <- current.scan.names[(current.scan.names %in% current.dissimilar.scans)]
          flagged.names <- append(flagged.names, "None")
@@ -284,10 +283,6 @@ shinyServer(function(input, output, session) {
    output$averageScans <- downloadHandler(
      filename = function() { paste(gsub("\\..*","",input$scansData), "_average_scans", '.csv', sep='') }, 
      content = function(file) {
-        print("average scans being downloaded")
-       print(sample.flags[input$sampleSelect])
-       
-       print(sample.flags)
         if (!is.null(input$sparklinkData) && !is.null(sample.flags)) {
           return(write.csv(getAverageScans(scans.data(), sparklink.data(), sample.flags), file, row.names = FALSE))
         } else if (!is.null(input$sparklinkData)) {
@@ -407,12 +402,6 @@ shinyServer(function(input, output, session) {
       if (input$showDissimilarScan) {
         
         current.scan.similarities <- current_dissimilar_scans()
-        if (length(current.scan.similarities) > 1) {
-          sample.flags[input$sampleSelect] <<- 1
-          print("A sample was flagged.")
-          print(sample.flags[input$sampleSelect])
-          
-        } 
 
         scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'scans')
         scan.plot.data <- scan.plot.data %>% mutate("dissimilar" = scan.plot.data$scans %in% current.scan.similarities)

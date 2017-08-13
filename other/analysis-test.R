@@ -6,6 +6,11 @@ library(ggvis)
 library(pracma)
 library(zoo)
 
+noise <- function(x, y, z) {
+  mapply(mean, sum(x, y, z))
+}
+
+mapply(findSimilarity, scan.maxima[,1], scan.maxima)
 
 graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
 loess.graph.data <- applyLoessSmooth(graph.data[[17]], 0.05)
@@ -15,25 +20,19 @@ names(sample.flags) <- names(graph.data)
 
 scan.plot.data <- melt(loess.graph.data, id.vars = "sample.diameters", variable.name = 'scans')
 scan.plot.data <- scan.plot.data %>% mutate("dissimilar" = scan.plot.data$scans %in% dissimilar.scans)
-  
-# Steps:
-## For marked: Pull out all of the bad data
-## Melt the rest of the data normally
 
-dissimilar.scans <- vector(mode = "list", length = length(graph.data))
-names(dissimilar.scans) <- names(graph.data)
+cars <- mtcars
 
-dissimilar.scans[["sample 17"]] <- findDissimilarScan(loess.graph.data)
 
-current.scan.similarities <- dissimilar.scans[["sample 17"]]
 
-current.scan.similarities <- current.scan.similarities[-which(current.scan.similarities == "scan1")]
+scan.maxima[] <- lapply(current.scan.names, 
+                                              function (x) { 
+                                                findLocalMaxima(
+                                                  current.graph.data$sample.diameters, 
+                                                  current.graph.data[[x]],
+                                                  700)[1:5]}) # 400 and 1:5 are arbitarily defined
 
-current.scan.similarities <- append(current.scan.similarities, "scan2")
-
-current.scan.names <- colnames(select(loess.graph.data, starts_with("scan")))
-flagged.names <- current.scan.names[(current.scan.names %in% dissimilar.scans[["sample 17"]])]
-unflagged.names <- current.scan.names[!(current.scan.names %in% dissimilar.scans[["sample 17"]])]
+lapply(current.graph.data)
 
 
 dissimilar.scans["sample 1"] <- findDissimilarScan(applyLoessSmooth(graph.data[[1]], 0.05))

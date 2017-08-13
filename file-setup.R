@@ -6,15 +6,21 @@
 
 # --------------------- Test Variables --------------------------
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
-# raw.scans.file <- read.csv("data\\AIMDataset2.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
-# raw.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
+# raw.scans.file <- read.csv("data\\170712_Study115_Batch3_AIMScans.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+# raw.sparklink.file <- read.csv("data\\170712_Study115_Batch3_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
+raw.sparklink.file <- read.csv("data\\170807_HDLrunlist_postleak.csv", stringsAsFactors = FALSE, header = FALSE)
 # graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
 # sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
 # amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
 # test.amprange <- intervalAmperageData(amp.graph.data, amp.graph.data$X0[1], amp.graph.data$X0[1] + (12 * 60))
  
-
+# amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
+# study115.scan.test <- scanGraphData(raw.scans.file, raw.sparklink.file)
+# start.time <- study115.scan.timestamps$start.time[1]
+# end.time <- study115.scan.timestamps$end.time[1]
+# study115.first.amp.set <- intervalAmperageData(amp.graph.data, start.time, end.time)
+# study115.scan.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file = raw.sparklink.file)
 
 # ---------------------- Functions -------------------------------
 
@@ -97,6 +103,8 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   return(scan.graph.data)                                      
 }
 
+
+
 # Returns a dataframe containing the corresponding starting and end time stamps 
 # for each sample (the time during which each sample was run) from the given raw scans file. 
 scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
@@ -177,7 +185,6 @@ ampGraphData <- function(raw.amplog.file) {
   amp.graph.data <- raw.amplog.file %>% select(X0, X2)
   return(amp.graph.data)
 }
-# amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
 
 
 
