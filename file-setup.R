@@ -8,7 +8,7 @@
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # raw.scans.file <- read.csv("data\\170712_Study115_Batch3_AIMScans.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
 # raw.sparklink.file <- read.csv("data\\170712_Study115_Batch3_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
-raw.sparklink.file <- read.csv("data\\170807_HDLrunlist_postleak.csv", stringsAsFactors = FALSE, header = FALSE)
+# raw.sparklink.file <- read.csv("data\\170807_HDLrunlist_postleak.csv", stringsAsFactors = FALSE, header = FALSE)
 # graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
 # sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
 # Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
@@ -181,12 +181,14 @@ setGraphLabels <- function(graph.labels, graph.data) {
 
 # Returns a data frame to be graphed from the given amplog file.
 # Assumes a particular format for the amplog file. 
+raw.amplog.file <- read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE)
 ampGraphData <- function(raw.amplog.file) {
-  amp.graph.data <- raw.amplog.file %>% select(X0, X2)
+  # Selects the columns that are times (the data in POSIXct format) and the columns that are nanometers (values greater than 100)
+  amp.graph.data <- raw.amplog.file %>% select(names(raw.amplog.file)[sapply(raw.amplog.file, is, "POSIXt")],
+                                               names(raw.amplog.file)[sapply(raw.amplog.file, function(column) { all(column > 100)})])
+  names(amp.graph.data) <- c("times", "nanometers")
   return(amp.graph.data)
 }
-
-
 
 # Returns a data frame that contains the time stamps and amperage data from the given amperage dataframe 
 # within the given start time and end time, +/- 3 minutes.
@@ -200,11 +202,12 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
   
   print(selected.interval)
   
+  print(amp.graph.data[,1])
   # Selects the times from the data that are contained within the previously calculated time interval.
-  selected.amp.times <- amp.graph.data[,1] %>% filter(amp.graph.data$X0 %within% selected.interval) 
+  selected.amp.times <- amp.graph.data[,1] %>% filter(amp.graph.data$times %within% selected.interval) 
   
   # Joins the corresponding amperage data to the selected time stamps.
-  selected.amp.data <- inner_join(selected.amp.times, amp.graph.data, by = "X0")
+  selected.amp.data <- inner_join(selected.amp.times, amp.graph.data, by = "times")
   return(selected.amp.data)
 }
 

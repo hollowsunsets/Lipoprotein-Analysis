@@ -1,4 +1,3 @@
-current.graph.data <- applyLoessSmooth(graph.data[[17]], 0.05)
 
 findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
   badScans <- c() # Default value of badScans is NULL
@@ -22,6 +21,7 @@ findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) 
   scan.maxima <- t(scan.maxima)
   
   # this is actually horrible. pretty sure I won't remember how this works tomorrow
+  # NOTE: reimplement this flaming garbage heap w/ mapply when time is available
   maxima.similarities <- lapply(c(1:ncol(scan.maxima)), function(z) { # for each column in scan.maximums
     lapply(seq_along(scan.maxima[,z]), function(x) { # for each element in the column
         mean( # calculate the mean
@@ -60,16 +60,9 @@ findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) 
   similarity.metrics$scan.names <- current.scan.names
 
   # Records the bad scans, if there are any.
-  
   for (i in 1:nrow(similarity.metrics)) {
-    if (similarity.metrics$V1[1] != min(similarity.metrics$V1)) {
-      if (similarity.metrics$V1[i] < similarity.metrics$V1[1]) {
-        badScans <- c(similarity.metrics$scan.names[i], badScans)
-      }
-    } else {
-      if (similarity.metrics$V1[i] < mean(similarity.metrics$V1)) {
-        badScans <- c(similarity.metrics$scan.names[i], badScans)
-      }
+    if (similarity.metrics$V1[i] < mean(similarity.metrics$V1)) {
+      badScans <- c(similarity.metrics$scan.names[i], badScans)
     }
   }
   # If there are no bad scans, return a list containing "None" (assuming that the functions using this expect a list)

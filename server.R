@@ -80,12 +80,12 @@ shinyServer(function(input, output, session) {
    # such that dependencies will exist before they are needed (nothing will be called when it doesn't exist yet)
   
    
-   
-   output$scanSimilarity <- renderUI({
-     checkboxInput("autoSimilarityScan", label = "Automatically Check for Dissimilarity",
-                   value = TRUE)
-   })
-   
+   # 
+   # output$scanSimilarity <- renderUI({
+   #   checkboxInput("autoSimilarityScan", label = "Automatically Check for Dissimilarity",
+   #                 value = TRUE)
+   # })
+   # 
    # Defines behavior for file control button, which hides and shows the 
    # file controls when clicked.  
     observeEvent(input$toggleFileControls, {
@@ -165,17 +165,17 @@ shinyServer(function(input, output, session) {
      return(current.sample.data)
    })
    
-   overall_dissimilarity_state <- reactive({
-     current.scan.data <- current_sample_data()
-     dissimilarity.check.active <- input$autoSimilarityScan
-     current.sample <- input$sampleSelect
-     if (input$autoSimilarityScan) {
-       dissimilar.scans[[input$sampleSelect]] <<- findDissimilarScan(current.scan.data)
-     } else {
-       dissimilar.scans[[current.sample]] <<- character()
-     }
-     return(dissimilar.scans[[current.sample]])
-   })
+   # overall_dissimilarity_state <- reactive({
+   #   current.scan.data <- current_sample_data()
+   #   if (input$autoSimilarityScan) {
+   #     dissimilar.scans[[input$sampleSelect]] <<- findDissimilarScan(current.scan.data)
+   #   } else {
+   #     dissimilar.scans[[input$sampleSelect]] <<- character()
+   #   }
+   #   return(dissimilar.scans[[input$sampleSelect]])
+   # })
+   # 
+   
    
    # Tracks the state of the current graph
    current_scan_data <- reactive({
@@ -186,20 +186,12 @@ shinyServer(function(input, output, session) {
          if (!(is.null(input$customSmooth)) && input$customSmooth > 0.01) {
             altered.sample.data <<- applyLoessSmooth(altered.sample.data, as.numeric(input$customSmooth))
          }
-         if (input$scansToAdd != "None" && !is.null(input$scansToAdd)) {
-           altered.sample.data <<- addBackScan(altered.sample.data, input$scansToAdd, selected.sample.data)
-           scan.names <- colnames(select(altered.sample.data, starts_with("scan")))
-           scan.names[length(scan.names) + 1] <- "None"
-           updateSelectInput(session, "scansToAdd", choices = scansDropped, selected = "None")
-           updateSelectInput(session, "scansToRemove", choices = scan.names, selected = "None")
-         }
-         if (input$scansToRemove != "None"  && !is.null(input$scansToRemove)) {
-           altered.sample.data <<- dropScan(altered.sample.data, input$scansToRemove)
-           scan.names <- colnames(select(altered.sample.data, starts_with("scan")))
-           scan.names[length(scan.names) + 1] <- "None"
-           updateSelectInput(session, "scansToAdd", choices = scansDropped, selected = "None")
-           updateSelectInput(session, "scansToRemove", choices = scan.names, selected = "None")
-         }                    
+         # if (input$scansToUnflag != "None" && !is.null(input$scansToUnflag)) {
+         #   altered.sample.data <<- addBackScan(altered.sample.data, input$scansToUnflag, selected.sample.data)
+         # }
+         # if (input$scansToFlag != "None"  && !is.null(input$scansToFlag)) {
+         #   altered.sample.data <<- dropScan(altered.sample.data, input$scansToFlag)
+         # }                    
        }
      return(altered.sample.data)
    })
@@ -210,22 +202,14 @@ shinyServer(function(input, output, session) {
      current.sample.data <- current_scan_data()
      if(!is.null(current.sample.data)) {
        # Sets temporary variable that contains the state of current scans marked as dissimilar
-       current.dissimilar.scans <- overall_dissimilarity_state()
+       current.dissimilar.scans <- dissimilar.scans[[input$sampleSelect]]
        
-       if (length(current.dissimilar.scans) > 1) {
-         sample.flags[input$sampleSelect] <- 1
-       } 
        # Updates the scan names in the dropdown menu for flagging scans and updates the stored flagged scans
        if (input$scansToFlag != "None" && !is.null(input$scansToFlag) &&  !(input$scansToFlag %in% current.dissimilar.scans)) {
     
          # The scan that the user picked is added to the current dissimilar scans
          current.dissimilar.scans <- append(current.dissimilar.scans, input$scansToFlag)
          
-         # If two or more scans are dissimilar, the sample overall is flagged.
-         if (length(current.dissimilar.scans) > 1) {
-           
-           sample.flags[input$sampleSelect] <- 1
-         }
          # Retrieves the names of the scans that are currently being graphed.
          current.scan.names <- colnames(select(current.sample.data, starts_with("scan")))
          
@@ -237,6 +221,8 @@ shinyServer(function(input, output, session) {
          
          updateSelectInput(session, "scansToFlag", choices = unflagged.names, selected = "None")
          updateSelectInput(session, "scansToUnflag", choices = flagged.names, selected = "None")
+         
+         # The tracked dissimilar scans is updated 
          dissimilar.scans[[input$sampleSelect]] <<- current.dissimilar.scans
        } 
        
@@ -332,8 +318,8 @@ shinyServer(function(input, output, session) {
    
    output$smoothControl <- renderUI({
      tagList(
-        p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
-        p("i.e: 0.10 = 10% smoothing span"),
+        # p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
+        # p("i.e: 0.10 = 10% smoothing span"),
         textInput("customSmooth", "Enter Graph Smoothing Span", "0.05")
      )
    })
@@ -353,8 +339,8 @@ shinyServer(function(input, output, session) {
    
    output$timeControl <- renderUI({
      amp.range <- amplog.data()
-     start.time <- amp.range$X0[1]
-     end.time <- tail(amp.range$X0, n = 1)
+     start.time <- amp.range$times[1]
+     end.time <- tail(amp.range$times, n = 1)
      sliderInput("range", "Time range:",
                  min = start.time, 
                  max = end.time, 
@@ -383,8 +369,8 @@ shinyServer(function(input, output, session) {
        return(altered.amp.data)
      }
      # default modification
-     altered.amp.data <- intervalAmperageData(altered.amp.data, altered.amp.data$X0[1], 
-                                              altered.amp.data$X0[1] + (12 * 60))
+     altered.amp.data <- intervalAmperageData(altered.amp.data, altered.amp.data$times[1], 
+                                              altered.amp.data$times[1] + (12 * 60))
      return(altered.amp.data)
    })
    
@@ -397,21 +383,18 @@ shinyServer(function(input, output, session) {
    
    output$scanPlot <- renderPlot({
      selected.scan.data <- current_scan_data()
-     current.scan.similarities <- current_dissimilar_scans()
      if (!is.null(input$scansData) && !is.null(selected.scan.data)) { 
       if (input$showDissimilarScan) {
         
-        current.scan.similarities <- current_dissimilar_scans()
+        current.scan.similarities <- dissimilar.scans[[input$sampleSelect]]
 
         scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'scans')
         scan.plot.data <- scan.plot.data %>% mutate("dissimilar" = scan.plot.data$scans %in% current.scan.similarities)
-        
         
         scan.plot.subtitle <- "Dissimilar Scans:"
         for (i in 1:length(current.scan.similarities)) {
           scan.plot.subtitle <- paste(scan.plot.subtitle, current.scan.similarities[i])
         }
-        
         
         scan.plot <- ggplot(data = scan.plot.data, aes(sample.diameters, value)) +
           geom_line(aes(colour = scans, linetype = dissimilar)) +
@@ -441,10 +424,10 @@ shinyServer(function(input, output, session) {
    output$ampPlot <- renderPlot({
      selected.amp.data <- current_amp_data()
      if (!is.null(input$amplogData) && !is.null(selected.amp.data)) {
-       amp.plot.subtitle <- paste0("From ", format(selected.amp.data$X0[[1]], usetz=TRUE, tz="Etc/GMT+8"),
-                              " to ", format(tail(selected.amp.data$X0, n = 1), usetz=TRUE, tz="Etc/GMT+8"))
+       amp.plot.subtitle <- paste0("From ", format(selected.amp.data$times[[1]], usetz=TRUE, tz="Etc/GMT+8"),
+                              " to ", format(tail(selected.amp.data$times, n = 1), usetz=TRUE, tz="Etc/GMT+8"))
        amp.plot <- ggplot(data = selected.amp.data) +
-                       geom_line(aes(x = X0, y= X2, group = 1)) + 
+                       geom_line(aes(x = times, y= nanometers, group = 1)) + 
                        xlab("Time (PST, Standard Time)") +
                        ylab("Amperage (amp)") +
                        ggtitle(bquote(atop("Selected Amperage Data", 
@@ -460,7 +443,7 @@ shinyServer(function(input, output, session) {
      full.amp.data <- amplog.data()
      if (!is.null(input$amplogData) && !is.null(full.amp.data)) {
        full.amp.plot <- ggplot(data = full.amp.data) + 
-                          geom_line(aes(x = X0, y = X2, group = 1)) +
+                          geom_line(aes(x = times, y = nanometers, group = 1)) +
                            xlab("Time (PST, Standard Time)") +
                            ylab("Amperage (amp)") +
                            ggtitle(paste0("Entire Amperage Dataset")) + 
