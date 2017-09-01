@@ -25,8 +25,8 @@
 # ---------------------- Functions -------------------------------
 
 
-# With the given scan files, returns a data frame that has 
-# contains the relevant scan data, prepared to be graphed.
+# With the given scan files, returns a data frame that has contains the relevant scan data, unsmoothed,
+# but otherwise filtered and processed by user specifications (disinclude first two scans; convert to appropriate units based on given formula)
 scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   # Remove all rows before the rows that contain diameter and count data
   diameter.row.index <- grep("^Raw", raw.scans.file[,1])                            
@@ -181,11 +181,12 @@ setGraphLabels <- function(graph.labels, graph.data) {
 
 # Returns a data frame to be graphed from the given amplog file.
 # Assumes a particular format for the amplog file. 
-raw.amplog.file <- read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE)
+# raw.amplog.file <- read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE)
 ampGraphData <- function(raw.amplog.file) {
   # Selects the columns that are times (the data in POSIXct format) and the columns that are nanometers (values greater than 100)
   amp.graph.data <- raw.amplog.file %>% select(names(raw.amplog.file)[sapply(raw.amplog.file, is, "POSIXt")],
                                                names(raw.amplog.file)[sapply(raw.amplog.file, function(column) { all(column > 100)})])
+  # Names are changed for readability and for easy indexing (though this probably doesn't need to be explained)
   names(amp.graph.data) <- c("times", "nanometers")
   return(amp.graph.data)
 }
@@ -196,13 +197,7 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
   # Calculates the time interval which will represent the range of amperage data that will be graphed.
   # Time interval is set to +/- 3 minutes for improved graph readability and to catch times that are not an exact match.
   # i.e, cases where start time is 12:15:30, amperage time is 12:15:29
-  print(start.time)
-  print(end.time)
   selected.interval <- as.interval(start.time - (3 * 60), end.time + (3 * 60))
-  
-  print(selected.interval)
-  
-  print(amp.graph.data[,1])
   # Selects the times from the data that are contained within the previously calculated time interval.
   selected.amp.times <- amp.graph.data[,1] %>% filter(amp.graph.data$times %within% selected.interval) 
   
@@ -215,6 +210,7 @@ intervalAmperageData <- function(amp.graph.data, start.time, end.time) {
 
 # Deletes every nth column in the given data frame, beginning from the 
 # given starting index, i. 
+# Used in scanGraphData.
 nthDelete <- function(data.frame, n, i) {
   data.frame[,-(seq(i, to=ncol(data.frame), by=n))]
 }

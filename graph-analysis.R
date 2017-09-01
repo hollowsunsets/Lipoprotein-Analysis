@@ -1,27 +1,36 @@
-
+# Currently not in use - needs to be fixed as it currently disproportionately favors scan1 as not bad, regardless of the dataset.
 findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
   badScans <- c() # Default value of badScans is NULL
 
-  # Removes all NA values from the scan data frame
+  # Removes all NA values from the scan data frame, if any
   current.graph.data <- current.graph.data[complete.cases(current.graph.data),]
+  
+  # Retrieves the scan names from the given data 
   current.scan.names <- names(select(current.graph.data, starts_with("scan")))
 
+  # Finds up to 5 local maxima for each scan in the scan dataset.
+  # 700 and 1:5 are arbitarily defined. 
+  # 700 is a metric that impacts the sensitivity of the algorithm
+  # that finds the maximums.
   scan.maxima <- data.frame("maximums" = lapply(current.scan.names, 
                                                   function (x) { 
                                                     findLocalMaxima(
                                                       current.graph.data$sample.diameters, 
                                                       current.graph.data[[x]], 700)[1:5]
-                                                  } # 400 and 1:5 are arbitarily defined
+                                                  } 
                                                 ), stringsAsFactors = FALSE)
   
+  # Names are added to the scan maximums to distinguish the maxima sets from one another
   names(scan.maxima) <- current.scan.names
   
+  # Removes NA values (these seem to show up in some cases, haven't had the time to check why)
   scan.maxima <- scan.maxima[complete.cases(scan.maxima),]
   
+  # 
   scan.maxima <- t(scan.maxima)
   
   # this is actually horrible. pretty sure I won't remember how this works tomorrow
-  # NOTE: reimplement this flaming garbage heap w/ mapply when time is available
+  # TO-DO: reimplement this flaming garbage heap w/ mapply when time is available
   maxima.similarities <- lapply(c(1:ncol(scan.maxima)), function(z) { # for each column in scan.maximums
     lapply(seq_along(scan.maxima[,z]), function(x) { # for each element in the column
         mean( # calculate the mean
@@ -34,21 +43,18 @@ findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) 
       })
   })
   
-  # maxima.similarities2 <- mapply(function(x) {
-  #   
-  # }, c(1:ncol(scan.maxima)))
-  #   
-  
-  
   
   maxima.similarities.reshaped <- NULL
   
-  
-
+  # this just reorganizes the data so all of the corresponding maxima are in one column, rather 
+  # than having all of the maxima for one scan be represented in one column
+  # prev format: scan1: 8.9 10.4 15.6
+  # new format: maxima 1: 8.9 8.11 9.1
+  # this makes the maxima easier to compare
   maxima.similarities.reshaped <- as.data.frame(sapply(c(1:length(maxima.similarities)), 
                                                        function(x) { cbind(maxima.similarities.reshaped, 
                                                                            unlist(maxima.similarities[[x]]))}))
-
+  # Calculates the mean of each maxima for each scan
   if (ncol(maxima.similarities.reshaped) > 1) {
     similarity.metrics <- as.data.frame(cbind(unlist(lapply(c(1:nrow(maxima.similarities.reshaped)), 
                                                             function(x) mean(as.numeric(maxima.similarities.reshaped[x,]), 
@@ -75,6 +81,8 @@ findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) 
 }
 
 
+# Using the given x, finds all local maxima from the given y.
+# w impacts the "sensitivity" of the algorithm - higher values of w find more maxima, while lower values find less
 findLocalMaxima <- function(x, y, w = 1) {
   n <- length(y)
   y.max <- rollapply(zoo(y), 2 * w + 1, max, align = "center")
@@ -93,22 +101,37 @@ findSimilarity <- function(first.number, second.number) {
 # Assumed data input format is the returned format from scanGraphData(). 
 # Generates the averaged dataset which contains the averaged values from the 4 visualized scans for each sample.
 # Returns in the format of a dataframe.
-# sample.flags <- integer(length(graph.data))
-
- # graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)), sparklink.file) 
- # sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
- # sample.flags <- integer(length(graph.data))
- # names(sample.flags) <- names(graph.data)
-getAverageScans <- function(graph.data, sparklink.file = NULL, sample.flags = NULL) {
+# 
+#  graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA)), sparklink.file)
+#  sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
+#  sample.flags <- rep("normal", length(graph.data))
+#  sample.flags[25] <- "rejected"
+#  names(sample.flags) <- names(graph.data)
+#  dissimilar.scans <- vector(mode = "list", length = length(graph.data))
+#  names(dissimilar.scans) <- names(graph.data)
+#  
+# test <- getAverageScans(graph.data, sparklink.file, dissimilar.scans, sample.flags)
+getAverageScans <- function(graph.data, sparklink.file = NULL, dissimilar.scans = NULL, sample.flags = NULL) {
+  # if (missing(sample.flags)) {
+  #   print("Sample flags was not passed in :(")
+  # }
+  # 
   
-  if (!is.null(sample.flags)) {
-    avg.scans <- rbind(c("Scan Flag", sample.flags))
+  if (!(missing(dissimilar.scans))) {
+    dissimilar.counts <- sapply(seq(length(dissimilar.scans)), function(x) { length(dissimilar.scans[[x]]) })
+    avg.scans <- rbind(c("# of Bad Scans", dissimilar.counts))
   } else {
-    # Otherwise, flags are automatically set to 0 for every existing sample in the dataset.
-    avg.scans <- rbind(c("Scan Flag", integer(length(graph.data) - 1)))
+    # Otherwise, the number of bad scans are automatically set to 0 for every existing sample in the dataset.
+    avg.scans <- rbind(c("# of Bad Scans", integer(length(graph.data) - 1)))
   }
-  
-  
+  # print(missing(sample.flags))
+  # print(sample.flags)
+  # if (!(missing(sample.flags))) {
+  #   avg.scans <- avg.scans %>% rbind(c("Sample Flags", sample.flags))
+  # } else {
+    avg.scans <- avg.scans %>% rbind(c("Sample Flags", integer(length(graph.data) - 1)))
+  # }
+  # print(avg.scans)
   # Add the overall sample labels to the graph, which should have been generated already for the graph data
   avg.scans <-  avg.scans %>% rbind(c("Sample Label", names(graph.data)))
 
@@ -142,16 +165,37 @@ getAverageScans <- function(graph.data, sparklink.file = NULL, sample.flags = NU
       # For loop bound is set to the size of avg.scans so unlabeled samples are not included
       for (i in 1:(ncol(avg.scans) - 1)) {
         current.sample <- graph.data[[graph.index]][,1:4]
+        # Selects all of the columns of scan data that are not contained in the list of dissimilar scans
+        # This discludes the "bad" data from being averaged 
+        current.sample <- current.sample %>% select(names(current.sample)[!names(current.sample) %in% dissimilar.scans[[graph.index]]])
+        # Averages all of the scan data that remains 
         current.sample.means <- rowMeans(current.sample)
-        # If the sample is flagged, the average scan for that sample will be set to the 4th 
-        # scan, which is scan #6 
-        if (sample.flags[graph.index] == 1) {
-          current.sample.means <- current.sample[[4]]
-        }
-        avg.sample.data <- avg.sample.data %>%
-          cbind(as.character(current.sample.means))
+        # If the sample is flagged, the averaged scan data for that sample will be set to 0s
+        # print(sample.flags)
+        # print(sample.flags[1])
+        # print(sample.flags[graph.index])
+        # print(sample.flags[graph.index] == 1)
+        # print(sample.flags[graph.index] == "normal")
+        # print(sample.flags[graph.index] == "rejected")
+        # # test <- (sample.flags[graph.index] == "rejected")
+        # print(test)
+        # if (!missing(sample.flags)) {
+        #   if (sample.flags[graph.index] == "rejected") {
+        #     current.sample.means <- rep(0, length(current.sample.means))
+        #   }
+        # }
+          
+          if (dissimilar.counts[graph.index] > 1) {
+            # if (!missing(sample.flags)) {
+            #   sample.flags[graph.index] <- "rejected"
+            # }
+            current.sample.means <- rep(0, length(current.sample.means))
+          }
+        # Binds the finalized average data for the current sample to the average sample data table in the form of a column
+        avg.sample.data <- avg.sample.data %>% cbind(as.character(current.sample.means))
         graph.index <- graph.index + 1
       }
+      
       avg.sample.data <- as.data.frame(avg.sample.data, stringsAsFactors = FALSE)
       names(avg.sample.data) <- names(avg.scans)
       avg.scans <- bind_rows(avg.scans, avg.sample.data)

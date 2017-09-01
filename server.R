@@ -26,7 +26,6 @@ shinyServer(function(input, output, session) {
 
     # Retrieves and reads in the given data files 
    sparklink.data <- reactive({
-     print("Currently reading in raw Sparklink file")
      infile <- input$sparklinkData
      if (is.null(infile)) {
        return(NULL)
@@ -38,7 +37,6 @@ shinyServer(function(input, output, session) {
    # Retrieves and reads in and processes scans dataset.
    # To-Do: Add check to ensure it is an accepted format. 
    scans.data <- reactive({
-     print("Currently reading in raw scans file")
      scan.data <- NULL
      infile <- input$scansData
      if (!is.null(infile)) {
@@ -53,14 +51,16 @@ shinyServer(function(input, output, session) {
        }
        dissimilar.scans <<- vector(mode = "list", length = length(scan.data))
        names(dissimilar.scans) <<- names(scan.data)
-       sample.flags <<- integer(length(scan.data))
+       sample.flags <<- rep("normal", length(scan.data))
+       print(sample.flags)
        names(sample.flags) <<- names(scan.data)
+       print(sample.flags)
+       
      }
      return(scan.data)
    })
    
    amplog.data <- reactive({
-     print("Currently reading in raw amperage file")
      infile <- input$amplogData
      if (is.null(infile)) {
        return(NULL)
@@ -71,7 +71,6 @@ shinyServer(function(input, output, session) {
      file.copy(infile$datapath, paste(infile$datapath, ".xlsx", sep="")) 
      raw.amp.file <- readxl::read_excel(paste(infile$datapath, ".xlsx", sep=""), col_names = FALSE)
      trimmed.amp.file <- raw.amp.file[complete.cases(raw.amp.file),]
-     print("Amp file was recognized as not null. Processing.")
      return(ampGraphData(trimmed.amp.file))
    })
      
@@ -106,24 +105,30 @@ shinyServer(function(input, output, session) {
   
     label <- reactive({
       if (!is.null(input$flagChange)) {
-        if (sample.flags[input$sampleSelect] == 0) {
-          label <- "Flag This Sample"
+        print(sample.flags)
+        if (sample.flags[input$sampleSelect] == "normal") {
+          label <- "Reject This Entire Sample"
         } else {
-          label <- "Unflag This Sample"
+          label <- "Undo Entire Sample Rejection"
         }
       }
     })
     
-    observeEvent({input$flagChange
-                  input$flagScans
-                  input$unflagScans }, {
-      print("observe Event for flag sample button update is triggered")
-      if (sample.flags[input$sampleSelect] == 0) {
-        sample.flags[input$sampleSelect] <<- 1
+    observeEvent(input$flagChange, {
+      print(sample.flags[input$sampleSelect])
+      
+      if (sample.flags[input$sampleSelect] == "normal") {
+        print(sample.flags[input$sampleSelect])
+        print(sample.flags[input$sampleSelect] == "rejected")
+        sample.flags[input$sampleSelect] <<- "rejected"
       } else {
-        sample.flags[input$sampleSelect] <<- 0
+        print(sample.flags[input$sampleSelect])
+        print(sample.flags[input$sampleSelect] == "rejected")
+        
+        sample.flags[input$sampleSelect] <<- "normal"
       }
     })
+    
     
     observeEvent(input$bookmarkState, {
       session$doBookmark()
@@ -134,8 +139,6 @@ shinyServer(function(input, output, session) {
     # Defines behavior for the sample selection dropdown menu, which 
     # allows users to select which sample they wish to see visualized. 
    output$sampleControl <- renderUI({
-     print(names(scans.data()))
-     print(names(scans.data())[1])
      selectInput("sampleSelect", label = "Select a Sample",
                  choices = names(scans.data()), selected = names(scans.data())[1])
    })
@@ -154,27 +157,12 @@ shinyServer(function(input, output, session) {
    current_sample_data <- reactive({
      current.sample.set <- scans.data()
      if (any(input$sampleSelect %in% names(current.sample.set))) {
-       print("input$sampleSelect was found in the names available")
-       print(input$sampleSelect)
        current.sample.data <- current.sample.set[[input$sampleSelect]]
      } else {
-       print("input$sampleSelect was not found for some reason")
-       print(input$sampleSelect)
        current.sample.data <- current.sample.set[[1]]
      }
      return(current.sample.data)
    })
-   
-   # overall_dissimilarity_state <- reactive({
-   #   current.scan.data <- current_sample_data()
-   #   if (input$autoSimilarityScan) {
-   #     dissimilar.scans[[input$sampleSelect]] <<- findDissimilarScan(current.scan.data)
-   #   } else {
-   #     dissimilar.scans[[input$sampleSelect]] <<- character()
-   #   }
-   #   return(dissimilar.scans[[input$sampleSelect]])
-   # })
-   # 
    
    
    # Tracks the state of the current graph
@@ -186,12 +174,12 @@ shinyServer(function(input, output, session) {
          if (!(is.null(input$customSmooth)) && input$customSmooth > 0.01) {
             altered.sample.data <<- applyLoessSmooth(altered.sample.data, as.numeric(input$customSmooth))
          }
-         # if (input$scansToUnflag != "None" && !is.null(input$scansToUnflag)) {
-         #   altered.sample.data <<- addBackScan(altered.sample.data, input$scansToUnflag, selected.sample.data)
-         # }
-         # if (input$scansToFlag != "None"  && !is.null(input$scansToFlag)) {
-         #   altered.sample.data <<- dropScan(altered.sample.data, input$scansToFlag)
-         # }                    
+          # if (input$scansToUnflag != "None" && !is.null(input$scansToUnflag)) {
+          #   print(dissimilar.scans[[input$sampleSelect]])
+          # }
+          # if (input$scansToFlag != "None"  && !is.null(input$scansToFlag)) {
+          #   print(dissimilar.scans[[input$sampleSelect]])
+          # }                    
        }
      return(altered.sample.data)
    })
@@ -205,6 +193,7 @@ shinyServer(function(input, output, session) {
        current.dissimilar.scans <- dissimilar.scans[[input$sampleSelect]]
        
        # Updates the scan names in the dropdown menu for flagging scans and updates the stored flagged scans
+       # This essentially regenerates the contents of the dropdown menu - it's too annoying to have to track the ordering otherwise
        if (input$scansToFlag != "None" && !is.null(input$scansToFlag) &&  !(input$scansToFlag %in% current.dissimilar.scans)) {
     
          # The scan that the user picked is added to the current dissimilar scans
@@ -213,7 +202,10 @@ shinyServer(function(input, output, session) {
          # Retrieves the names of the scans that are currently being graphed.
          current.scan.names <- colnames(select(current.sample.data, starts_with("scan")))
          
+         # Retrieves the names of the scans that have not been previously marked as dissimilar
          flagged.names <- current.scan.names[(current.scan.names %in% current.dissimilar.scans)]
+         
+         # Adds "None" to the end of the list of names
          flagged.names <- append(flagged.names, "None")
          
          unflagged.names <- current.scan.names[!(current.scan.names %in% current.dissimilar.scans)]
@@ -224,6 +216,7 @@ shinyServer(function(input, output, session) {
          
          # The tracked dissimilar scans is updated 
          dissimilar.scans[[input$sampleSelect]] <<- current.dissimilar.scans
+         print(dissimilar.scans[[input$sampleSelect]])
        } 
        
        if (input$scansToUnflag != "None" && !is.null(input$scansToUnflag) && (input$scansToUnflag %in% current.dissimilar.scans)) {
@@ -239,6 +232,8 @@ shinyServer(function(input, output, session) {
          updateSelectInput(session, "scansToFlag", choices = unflagged.names, selected = "None")
          updateSelectInput(session, "scansToUnflag", choices = flagged.names, selected = "None")
          dissimilar.scans[[input$sampleSelect]] <<- current.dissimilar.scans
+         print(dissimilar.scans[[input$sampleSelect]])
+         
        }
        
      }
@@ -269,12 +264,18 @@ shinyServer(function(input, output, session) {
    output$averageScans <- downloadHandler(
      filename = function() { paste(gsub("\\..*","",input$scansData), "_average_scans", '.csv', sep='') }, 
      content = function(file) {
-        if (!is.null(input$sparklinkData) && !is.null(sample.flags)) {
-          return(write.csv(getAverageScans(scans.data(), sparklink.data(), sample.flags), file, row.names = FALSE))
-        } else if (!is.null(input$sparklinkData)) {
-          return(write.csv(getAverageScans(scans.data(), sparklink.data()), file, row.names = FALSE))
+        print("checking if sample flags is not null inside function")
+        print(sample.flags)
+        if (!is.null(input$sparklinkData) && !is.null(dissimilar.scans) && !is.null(sample.flags)) {
+          return(write.csv(getAverageScans(scans.data(), sparklink.data(), dissimilar.scans, sample.flags), file, row.names = FALSE))
+        } else if (!is.null(input$sparklinkData) && !is.null(dissimilar.scans)) {
+          return(write.csv(getAverageScans(scans.data(), sparklink.data(), dissimilar.scans = dissimilar.scans), file, row.names = FALSE))
+        } else if (!is.null(input$sparklinkData) && !is.null(sample.flags)) {
+          return(write.csv(getAverageScans(scans.data(), sparklink.data(), sample.flags = sample.flags), file, row.names = FALSE))
+        } else if (!is.null(dissimilar.scans)) {
+          return(write.csv(getAverageScans(scans.data(), dissimilar.scans = dissimilar.scans)))
         } else if (!is.null(sample.flags)) {
-          return(write.csv(getAverageScans(scans.data(), sample.flags = sample.flags), file, row.names = FALSE))
+          return(write.csv(getAverageScans(scans.data(), sample.flags = sample.flags)))
         } else {
           return(write.csv(getAverageScans(scans.data()), file, row.names = FALSE))
         }
@@ -353,7 +354,6 @@ shinyServer(function(input, output, session) {
      current.amp.set <- amplog.data()
      altered.amp.data <- current.amp.set
      if (!is.null(input$timeControl) && input$enableTimeControls) {
-       print("time controls recognized as enabled - retrieving timestamps from time control")
        altered.amp.data <- intervalAmperageData(altered.amp.data,
                                                 input$timeControl[[1]],
                                                 input$timeControl[[2]])
@@ -386,7 +386,7 @@ shinyServer(function(input, output, session) {
      if (!is.null(input$scansData) && !is.null(selected.scan.data)) { 
       if (input$showDissimilarScan) {
         
-        current.scan.similarities <- dissimilar.scans[[input$sampleSelect]]
+        current.scan.similarities <- current_dissimilar_scans()
 
         scan.plot.data <- melt(selected.scan.data, id.vars = "sample.diameters", variable.name = 'scans')
         scan.plot.data <- scan.plot.data %>% mutate("dissimilar" = scan.plot.data$scans %in% current.scan.similarities)
@@ -420,7 +420,7 @@ shinyServer(function(input, output, session) {
      }
    })
    
-   # Generates the graph that visualizes the amplog data
+   # Generates the graph that visualizes the user-selected (or default) amplog data
    output$ampPlot <- renderPlot({
      selected.amp.data <- current_amp_data()
      if (!is.null(input$amplogData) && !is.null(selected.amp.data)) {
@@ -439,6 +439,7 @@ shinyServer(function(input, output, session) {
      }
    })
    
+   # Generates the graph that visualizes the full range of amplog data
    output$fullAmpPlot <- renderPlot({
      full.amp.data <- amplog.data()
      if (!is.null(input$amplogData) && !is.null(full.amp.data)) {

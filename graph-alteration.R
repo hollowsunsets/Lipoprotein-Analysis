@@ -1,7 +1,7 @@
 # --------------------- Dependencies ---------------------------
 # library(dplyr)
 
-# ----------------- Global Variables ---------------------------
+# ----------- Global Variables (and Test Variables) ------------
 # Tracks the scans that have been dropped from the dataset
 scansDropped <- c("None")
 # new.scan.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE), new.sparklink.file)
@@ -53,6 +53,7 @@ addBackScan <- function(graph.data, scan.number, original.data) {
 }
 
 # Calculates SSE for the given dataset, correlated for the chosen referential y-axis. 
+# Was planning on using this to recommend an ideal smoothing span but never got around to it
 calcSSE <- function(data.set, y.axis){
   data.set.state <- data.set
   data.set.state$index <- 1:nrow(data.set)
@@ -68,6 +69,7 @@ calcSSE <- function(data.set, y.axis){
   return(sse)
 }
 
+# Smoothes every column in the given dataset, based on the given smoothing span
 applyLoessSmooth <- function(raw.data, smoothing.span) {
   raw.data <- raw.data[complete.cases(raw.data),]    
   vars <- colnames(raw.data)
