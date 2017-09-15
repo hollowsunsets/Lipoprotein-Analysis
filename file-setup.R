@@ -89,9 +89,13 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   if (!(is.null(raw.sparklink.file))) {
     sample.names <- as.data.frame(raw.sparklink.file[,3], stringsAsFactors = FALSE)
     sample.size.difference <- length(scan.graph.data) - nrow(sample.names)
+    print("nrow(sample.names)")
+    print(nrow(sample.names))
+    print("length(scan.graph.data)")
+    print(length(scan.graph.data))
     if (nrow(sample.names) < length(scan.graph.data)) {
-      sample.names <- rbind(sample.names, 
-                            c(paste0("unlabeled sample ", 
+      sample.names <- rbind(sample.names,
+                            c(paste0("unlabeled sample ",
                                      nrow(sample.names):
                                      nrow(sample.names) + sample.size.difference)))
     }

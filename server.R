@@ -13,7 +13,7 @@ options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
 source("file-setup.R")
 source("graph-alteration.R")
-source("graph-analysis.R")
+debugSource("graph-analysis.R")
 
 shinyServer(function(input, output, session) {
   # ----------------------------------------------- Global Variables --------------------------------------------------#
@@ -52,10 +52,7 @@ shinyServer(function(input, output, session) {
        dissimilar.scans <<- vector(mode = "list", length = length(scan.data))
        names(dissimilar.scans) <<- names(scan.data)
        sample.flags <<- rep("normal", length(scan.data))
-       print(sample.flags)
        names(sample.flags) <<- names(scan.data)
-       print(sample.flags)
-       
      }
      return(scan.data)
    })
@@ -105,7 +102,6 @@ shinyServer(function(input, output, session) {
   
     label <- reactive({
       if (!is.null(input$flagChange)) {
-        print(sample.flags)
         if (sample.flags[input$sampleSelect] == "normal") {
           label <- "Reject This Entire Sample"
         } else {
@@ -115,15 +111,10 @@ shinyServer(function(input, output, session) {
     })
     
     observeEvent(input$flagChange, {
-      print(sample.flags[input$sampleSelect])
-      
+
       if (sample.flags[input$sampleSelect] == "normal") {
-        print(sample.flags[input$sampleSelect])
-        print(sample.flags[input$sampleSelect] == "rejected")
         sample.flags[input$sampleSelect] <<- "rejected"
       } else {
-        print(sample.flags[input$sampleSelect])
-        print(sample.flags[input$sampleSelect] == "rejected")
         
         sample.flags[input$sampleSelect] <<- "normal"
       }
@@ -189,6 +180,7 @@ shinyServer(function(input, output, session) {
    current_dissimilar_scans <- reactive({
      current.sample.data <- current_scan_data()
      if(!is.null(current.sample.data)) {
+       print(dissimilar.scans)
        # Sets temporary variable that contains the state of current scans marked as dissimilar
        current.dissimilar.scans <- dissimilar.scans[[input$sampleSelect]]
        
@@ -215,6 +207,7 @@ shinyServer(function(input, output, session) {
          updateSelectInput(session, "scansToUnflag", choices = flagged.names, selected = "None")
          
          # The tracked dissimilar scans is updated 
+         print(dissimilar.scans[[input$sampleSelect]])
          dissimilar.scans[[input$sampleSelect]] <<- current.dissimilar.scans
          print(dissimilar.scans[[input$sampleSelect]])
        } 
@@ -231,19 +224,27 @@ shinyServer(function(input, output, session) {
 
          updateSelectInput(session, "scansToFlag", choices = unflagged.names, selected = "None")
          updateSelectInput(session, "scansToUnflag", choices = flagged.names, selected = "None")
+         print(dissimilar.scans[[input$sampleSelect]])
          dissimilar.scans[[input$sampleSelect]] <<- current.dissimilar.scans
          print(dissimilar.scans[[input$sampleSelect]])
          
+
        }
-       
+       print(current.dissimilar.scans)
+       print(dissimilar.scans)
      }
      return(dissimilar.scans[[input$sampleSelect]])
    })
    
-   observeEvent(input$sampleSelect, 
+   observeEvent(input$sampleSelect,
                 {
      altered.sample.data <<- current_sample_data()
-     dissimilar.scans[[input$sampleSelect]] <<- current_dissimilar_scans()
+     current.dissimilar.scans <- current_dissimilar_scans()
+     print(current.dissimilar.scans)
+     if (!is.null(current.dissimilar.scans)) {
+        dissimilar.scans[[input$sampleSelect]] <<- current.dissimilar.scans
+     }
+
    })
    
    observeEvent(input$scansData, {
@@ -264,18 +265,16 @@ shinyServer(function(input, output, session) {
    output$averageScans <- downloadHandler(
      filename = function() { paste(gsub("\\..*","",input$scansData), "_average_scans", '.csv', sep='') }, 
      content = function(file) {
-        print("checking if sample flags is not null inside function")
-        print(sample.flags)
         if (!is.null(input$sparklinkData) && !is.null(dissimilar.scans) && !is.null(sample.flags)) {
-          return(write.csv(getAverageScans(scans.data(), sparklink.data(), dissimilar.scans, sample.flags), file, row.names = FALSE))
+          return(write.csv(getAverageScans(scans.data(), sparklink.data(), dissimilar.scans = dissimilar.scans, sample.flags= sample.flags), file, row.names = FALSE))
         } else if (!is.null(input$sparklinkData) && !is.null(dissimilar.scans)) {
           return(write.csv(getAverageScans(scans.data(), sparklink.data(), dissimilar.scans = dissimilar.scans), file, row.names = FALSE))
         } else if (!is.null(input$sparklinkData) && !is.null(sample.flags)) {
           return(write.csv(getAverageScans(scans.data(), sparklink.data(), sample.flags = sample.flags), file, row.names = FALSE))
         } else if (!is.null(dissimilar.scans)) {
-          return(write.csv(getAverageScans(scans.data(), dissimilar.scans = dissimilar.scans)))
+          return(write.csv(getAverageScans(scans.data(), dissimilar.scans = dissimilar.scans), file, row.names = FALSE))
         } else if (!is.null(sample.flags)) {
-          return(write.csv(getAverageScans(scans.data(), sample.flags = sample.flags)))
+          return(write.csv(getAverageScans(scans.data(), sample.flags = sample.flags), file, row.names = FALSE))
         } else {
           return(write.csv(getAverageScans(scans.data()), file, row.names = FALSE))
         }

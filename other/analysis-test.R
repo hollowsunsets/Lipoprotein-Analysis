@@ -6,9 +6,16 @@ library(ggvis)
 library(pracma)
 library(zoo)
 
+
+
+dissimilar.counts[names(graph.data)[1]]
+
+avg.scans[1, 3] <- "rejected"
+
 graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
 loess.graph.data <- applyLoessSmooth(graph.data[[17]], 0.05)
 
+sample.names <- new.sparklink.file[,4]
 dissimilar.scans <- vector(mode = "list", length = length(graph.data))
 dissimilar.scans[[1]] <- c("scan2", "scan1")
 names(dissimilar.scans) <- names(graph.data)
@@ -16,6 +23,9 @@ subset.test <- c("scan1", "scan2")
 graph.data.subset <- loess.graph.data %>% select(dissimilar.scans[["sample 1"]])
 
 sample.test <- rep("normal", 10)
+
+
+c(paste("label ", 1:1))
 
 dissimilar.counts <- sapply(seq(length(dissimilar.scans)), function(x) { length(dissimilar.scans[[x]]) })
 
