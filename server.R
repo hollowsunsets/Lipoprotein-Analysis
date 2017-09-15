@@ -13,7 +13,7 @@ options(shiny.maxRequestSize=30*1024^2) # allows larger file sizes (up to 30MB)
 
 source("file-setup.R")
 source("graph-alteration.R")
-debugSource("graph-analysis.R")
+source("graph-analysis.R")
 
 shinyServer(function(input, output, session) {
   # ----------------------------------------------- Global Variables --------------------------------------------------#
