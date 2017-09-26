@@ -1,6 +1,6 @@
 # new.scan.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE), new.sparklink.file)
 # new.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
-
+# 
 
 
 # Currently not in use - needs to be fixed as it currently disproportionately favors scan1 as not bad, regardless of the dataset.
@@ -159,7 +159,7 @@ getAverageScans <- function(graph.data, sparklink.file = NULL, dissimilar.scans 
     avg.scans <- avg.scans %>% rbind(c("Diameter", paste0("inj", 1:(length(avg.scans) - 1))))
     
   }
-
+    print(sample.names)
   avg.scans <- as.data.frame(avg.scans, stringsAsFactors = FALSE)
     if (!is.null(graph.data)) {
       # Retrieves the diameters from the first set of sample data. The diameters should be the same for every dataset.
