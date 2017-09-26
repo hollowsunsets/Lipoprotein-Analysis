@@ -6,8 +6,8 @@
 
 # --------------------- Test Variables --------------------------
 # raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
-# raw.scans.file <- read.csv("data\\170712_Study115_Batch3_AIMScans.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
-# raw.sparklink.file <- read.csv("data\\170712_Study115_Batch3_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
+scans.file <- read.csv("data\\170712_Study115_Batch3_AIMScans.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
+sparklink.file <- read.csv("data\\170712_Study115_Batch3_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
 # raw.sparklink.file <- read.csv("data\\170807_HDLrunlist_postleak.csv", stringsAsFactors = FALSE, header = FALSE)
 # graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
 # sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
@@ -111,6 +111,8 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
 
 # Returns a dataframe containing the corresponding starting and end time stamps 
 # for each sample (the time during which each sample was run) from the given raw scans file. 
+
+test <- scanTimeStamps()
 scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   
   # Removes all rows before and after the time stamps and the sample labels. 
