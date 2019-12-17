@@ -1,4 +1,0 @@
-# dmen-vis
-
-## User Guide
-
