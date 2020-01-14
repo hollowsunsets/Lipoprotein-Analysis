@@ -1,26 +1,8 @@
 # --------------------- Dependencies ---------------------------
-# NOTE: Comment out or move to server.R after done testing
  library(dplyr) # dependency for general data wrangling
  library(readxl) # dependency for reading in .xlsx files
  library(lubridate) # dependency for manipulating timestamps
 
-# --------------------- Test Variables --------------------------
-# raw.scans.file <- read.csv("data\\170522_new_data_format_for_JC_DMA.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
-scans.file <- read.csv("data\\170712_Study115_Batch3_AIMScans.csv", na.strings = c("", "NA"), stringsAsFactors=FALSE)
-sparklink.file <- read.csv("data\\170712_Study115_Batch3_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
-# raw.sparklink.file <- read.csv("data\\170807_HDLrunlist_postleak.csv", stringsAsFactors = FALSE, header = FALSE)
-# graph.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE, na.strings = c("", NA))) 
-# sparklink.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file)
-# Note: na.strings = c("", "NA") is necessary for time stamps to be retrieved properly
-# amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
-# test.amprange <- intervalAmperageData(amp.graph.data, amp.graph.data$X0[1], amp.graph.data$X0[1] + (12 * 60))
- 
-# amp.graph.data <- ampGraphData(read_excel("data\\170712_Study115_Batch3_Amplog.xlsx", col_names = FALSE))
-# study115.scan.test <- scanGraphData(raw.scans.file, raw.sparklink.file)
-# start.time <- study115.scan.timestamps$start.time[1]
-# end.time <- study115.scan.timestamps$end.time[1]
-# study115.first.amp.set <- intervalAmperageData(amp.graph.data, start.time, end.time)
-# study115.scan.timestamps <- scanTimeStamps(raw.scans.file, raw.sparklink.file = raw.sparklink.file)
 
 # ---------------------- Functions -------------------------------
 
@@ -89,10 +71,6 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
   if (!(is.null(raw.sparklink.file))) {
     sample.names <- as.data.frame(raw.sparklink.file[,3], stringsAsFactors = FALSE)
     sample.size.difference <- length(scan.graph.data) - nrow(sample.names)
-    print("nrow(sample.names)")
-    print(nrow(sample.names))
-    print("length(scan.graph.data)")
-    print(length(scan.graph.data))
     if (nrow(sample.names) < length(scan.graph.data)) {
       sample.names <- rbind(sample.names,
                             c(paste0("unlabeled sample ",

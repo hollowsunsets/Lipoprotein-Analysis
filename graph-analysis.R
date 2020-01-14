@@ -1,8 +1,3 @@
-# new.scan.data <- scanGraphData(read.csv("data\\170622_Study114_AIM.csv", stringsAsFactors = FALSE), new.sparklink.file)
-# new.sparklink.file <- read.csv("data\\170622_Study114_Runlist.csv", stringsAsFactors = FALSE, header = FALSE)
-# 
-
-
 # Currently not in use - needs to be fixed as it currently disproportionately favors scan1 as not bad, regardless of the dataset.
 findDissimilarScan <- function(current.graph.data, difference.tolerance = 0.90) {
   badScans <- c() # Default value of badScans is NULL
@@ -106,15 +101,6 @@ findSimilarity <- function(first.number, second.number) {
 # Assumed data input format is the returned format from scanGraphData(). 
 # Generates the averaged dataset which contains the averaged values from the 4 visualized scans for each sample.
 # Returns in the format of a dataframe.
-# 
- # graph.data <- new.scan.data
- # sparklink.file <- new.sparklink.file
- # sample.flags <- rep("normal", length(graph.data))
- # names(sample.flags) <- names(graph.data)
- # dissimilar.scans <- vector(mode = "list", length = length(graph.data))
- # names(dissimilar.scans) <- names(graph.data)
-# #  
-# test <- getAverageScans(graph.data, sparklink.file, dissimilar.scans, sample.flags)
 getAverageScans <- function(graph.data, sparklink.file = NULL, dissimilar.scans = NULL, sample.flags = NULL) {
   print(dissimilar.scans[[1]])
   if (!(missing(sample.flags))) {
