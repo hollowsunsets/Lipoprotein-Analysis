@@ -18,7 +18,6 @@ All of the packages listed below must be installed.
 * `shinyjs`
 * `dplyr`
 * `ggplot2`
-* `reshape2`
 * `readxl`
 * `lubridate`
 * `pracma`
