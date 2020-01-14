@@ -9,7 +9,6 @@ This app requires an `R` installation with a version >= 3.5.
 * `shinyjs`
 * `dplyr`
 * `ggplot2`
-* `reshape2`
 * `readxl`
 * `lubridate`
 * `pracma`
