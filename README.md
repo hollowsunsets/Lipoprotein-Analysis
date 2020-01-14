@@ -6,6 +6,16 @@ In the upper left corner of the source window, click `Run App`.
 
 ![Running app in RStudio](docs/images/running-app.png)
 
+The following window should open.
+
+![App UI](docs/images/app.png)
+
+
+Upload the test files in `data/`. You should see the following graphs appear.
+
+![App UI with Graphs](docs/images/app-with-graphs.png)
+
+
 
 ## Dependencies
 
