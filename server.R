@@ -76,13 +76,6 @@ shinyServer(function(input, output, session) {
    # NOTE: Ordering of function definitions matters - Shiny renders as it reads in, and the various components are defined
    # such that dependencies will exist before they are needed (nothing will be called when it doesn't exist yet)
   
-   
-   # 
-   # output$scanSimilarity <- renderUI({
-   #   checkboxInput("autoSimilarityScan", label = "Automatically Check for Dissimilarity",
-   #                 value = TRUE)
-   # })
-   # 
    # Defines behavior for file control button, which hides and shows the 
    # file controls when clicked.  
     observeEvent(input$toggleFileControls, {
@@ -166,12 +159,6 @@ shinyServer(function(input, output, session) {
          if (!(is.null(input$customSmooth)) && input$customSmooth > 0.01) {
             altered.sample.data <<- applyLoessSmooth(altered.sample.data, as.numeric(input$customSmooth))
          }
-          # if (input$scansToUnflag != "None" && !is.null(input$scansToUnflag)) {
-          #   print(dissimilar.scans[[input$sampleSelect]])
-          # }
-          # if (input$scansToFlag != "None"  && !is.null(input$scansToFlag)) {
-          #   print(dissimilar.scans[[input$sampleSelect]])
-          # }                    
        }
      return(altered.sample.data)
    })
@@ -319,8 +306,8 @@ shinyServer(function(input, output, session) {
    
    output$smoothControl <- renderUI({
      tagList(
-        # p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
-        # p("i.e: 0.10 = 10% smoothing span"),
+        p("Enter a number (n > 0.0) to represent the span percent by which you would like to smooth the graph."),
+        p("i.e: 0.10 = 10% smoothing span"),
         textInput("customSmooth", "Enter Graph Smoothing Span", "0.05")
      )
    })

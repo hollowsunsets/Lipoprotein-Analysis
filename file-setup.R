@@ -90,7 +90,6 @@ scanGraphData <- function(raw.scans.file, raw.sparklink.file = NULL) {
 # Returns a dataframe containing the corresponding starting and end time stamps 
 # for each sample (the time during which each sample was run) from the given raw scans file. 
 
-test <- scanTimeStamps()
 scanTimeStamps <- function(raw.scans.file, raw.sparklink.file = NULL) {
   
   # Removes all rows before and after the time stamps and the sample labels. 
