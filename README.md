@@ -4,7 +4,7 @@
 To run this application, `git clone` this project and open `server.R` in `RStudio`.
 In the upper left corner of the source window, click `Run App`.
 
-![Running app in RStudio](docs/images/running-app.png)
+![Running app in RStudio](docs/images/rstudio-instructions.png)
 
 The following window should open.
 
